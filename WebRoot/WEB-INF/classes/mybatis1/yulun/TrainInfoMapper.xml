@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="trainInfoMapper">
+    <sql id="Field">
+     `id`,
+	`uid`,
+	`name`,
+	`stat`,
+	`addr`,
+	`principal`,
+	`tel`,
+	`tel2`,
+	`remark`,
+	`czman`,
+    `cztime`
+    </sql>
+    <sql id="saveValue">
+     null,
+     (SELECT MD5(UUID())),
+	#{name},
+	#{stat},
+	#{addr},
+	#{principal},
+	#{tel},
+	#{tel2},
+	#{remark},
+	#{czman},
+    (select now())
+    </sql>
+    <sql id="table">
+        `tesp_TrainInfo`
+    </sql>
+
+<!--    根据条件查询所有机构     -->
+    <select id="findAlllistPage" resultType="pd"  parameterType="page" >
+        select <include refid="Field" /> from <include refid="table"/> where 1 = 1
+<if test="pd.name != null and pd.name != ''">
+    and `name` like CONCAT('%',#{pd.name},'%')
+</if>
+<if test="pd.keywords != null and pd.keywords != ''">
+    and `name` like CONCAT('%',#{pd.keywords},'%') OR
+    stat like CONCAT('%',#{pd.keywords},'%') OR
+    addr like CONCAT('%',#{pd.keywords},'%') OR
+    principal like CONCAT('%',#{pd.keywords},'%') OR
+    tel like CONCAT('%',#{pd.keywords},'%') OR
+    tel2 like CONCAT('%',#{pd.keywords},'%') OR
+    remark like CONCAT('%',#{pd.keywords},'%') OR
+    czman like CONCAT('%',#{pd.keywords},'%')
+</if>
+order by id desc
+    </select>
+
+   <delete id="deleteById"   parameterType="pd" >
+       delete from <include refid="table" /> where id = #{traininfoid}
+   </delete>
+
+
+    <select id="findbyId" resultType="pd"  parameterType="page" >
+    select <include refid="Field" /> from <include refid="table"/> where 1 = 1
+    <if test="traininfoid != null and traininfoid != ''">
+        and id = #{traininfoid}
+    </if>
+    </select>
+
+    <select id="findExit" resultType="pd"  parameterType="page" >
+        select <include refid="Field" /> from <include refid="table"/> where 1 = 1
+         <if test="name != null and name != ''">
+            and `name` = #{name}
+        </if>
+        <if test="addr != null and addr != ''">
+            and addr = #{addr}
+        </if>
+    </select>
+
+    <insert id="save" parameterType="java.util.List">
+        insert into
+        <include refid="table"></include>
+        (
+        <include refid="Field"></include>
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+
+            (null,
+            (SELECT MD5(UUID())),
+            #{item.name},
+            #{item.stat},
+            #{item.addr},
+            #{item.principal},
+            #{item.tel},
+            #{item.tel2},
+            #{item.remark},
+            #{item.czman},
+            (select now())
+            )
+
+        </foreach>
+
+    </insert>
+
+    <update id="update" parameterType="pd">
+        update <include refid="table"/>
+        <set>
+            <if test="name != null and name != ''">
+                `name` = #{name},
+            </if>
+            <if test="stat != null and stat != ''">
+                stat = #{stat},
+            </if>
+            <if test="addr != null and addr != ''">
+                addr = #{addr},
+            </if>
+            <if test="principal != null and principal != ''">
+                principal = #{principal},
+            </if>
+            <if test="tel != null and tel != ''">
+                tel = #{tel},
+            </if>
+            <if test="tel2 != null and tel2 != ''">
+                tel2 = #{tel2},
+            </if>
+            <if test="remark != null and remark != ''">
+                remark = #{remark},
+            </if>
+        </set>
+        where id = #{traininfoid}
+    </update>
+</mapper>

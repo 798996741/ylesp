@@ -1,0 +1,23 @@
+package com.yulun.service;
+
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+
+import java.util.List;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-08 16:13
+ **/
+public interface OtherPersonManager {
+    List<PageData> findAlllistPage(Page page) throws Exception;
+
+    List<PageData> findByIdUid(PageData pd) throws Exception;
+    List<PageData> findXl(PageData pd) throws Exception;
+    List<PageData> findExist(Page page) throws Exception;
+    List<PageData> findById(PageData pageData) throws Exception;
+    Object save(PageData pd) throws Exception;
+    Object update(PageData pd) throws Exception;
+    //批量保存
+    Object save(List<PageData> pd) throws Exception;
+}

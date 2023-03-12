@@ -1,0 +1,373 @@
+package com.yulun.controller.trainreco;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.*;
+import org.apache.commons.lang3.StringUtils;
+import sun.org.mozilla.javascript.internal.json.JsonParser;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class TrainrecoWeb implements CommonIntefate {
+
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+    @Resource(name = "trainrecoService")
+    private TrainrecoManager trainrecoManager;
+    @Resource(name = "consumerService")
+    private ConsumerManager consumerManager;
+    @Resource(name = "revrecordService")
+    private RevrecordManager revrecordManager;
+    @Resource(name="companyService")
+    private CompanyManager companyService;
+
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object = new JSONObject();
+        try {
+            PageData pd = new PageData();
+            Page page = new Page();
+            String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+            PageData pd_stoken = new PageData();
+//            StringUtils.isNotEmpty();
+//            org.apache.commons.lang3.StringUtils.
+            //cmd的判断，json的判空，分页数据的判断，
+            JSONObject json = data.getJSONObject("data");
+            pd_stoken.put("TOKENID", json.get("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (cmd.equals("trainrecolist")) {
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("starttime", json.get("starttime"));
+                    pd.put("endtime", json.get("endtime"));
+                    pd.put("issue", json.get("issue"));
+                    pd.put("keywords", json.get("keywords"));
+                    page.setPd(pd);
+                    List<PageData> list = trainrecoManager.findTrainrecolistPage(page);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                } else if (cmd.equals("detiallist")) {
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+
+                    pd.put("uid", json.getString("uid"));
+                    page.setPd(pd);
+                    List<PageData> list = trainrecoManager.finddetiallistPage(page);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                } else if (cmd.equals("inserttrainreco")) {
+                    pd.put("czman",pd_token.getString("ZXYH"));
+                    pd.put("uid",json.get("uid"));
+                    pd.put("ucid",json.get("ucid"));
+                    companyService.saveRecord(pd);
+                    pd.put("uid", json.get("uid"));
+                    pd.put("creden", json.get("creden"));
+                    pd.put("jobvar", json.get("jobvar"));
+                    pd.put("level", json.get("level"));
+                    pd.put("issue", json.get("issue"));
+                    pd.put("trainname", json.get("trainname"));
+                    pd.put("remark", json.get("remark"));
+                    pd.put("cate", json.get("cate"));
+                    pd.put("cztime", getTime());
+                    trainrecoManager.insertTrainreco(pd);
+                    object.put("success", "true");
+                } else if (cmd.equals("updatetrainreco")) {
+                    pd.put("czman",pd_token.getString("ZXYH"));
+                    pd.put("uid",json.get("uid"));
+                    pd.put("ucid",json.get("ucid"));
+                    companyService.saveRecord(pd);
+                    pd.put("id", json.get("id"));
+                    pd.put("uid", json.get("uid"));
+                    pd.put("creden", json.get("creden"));
+                    pd.put("jobvar", json.get("jobvar"));
+                    pd.put("level", json.get("level"));
+                    pd.put("issue", json.get("issue"));
+                    pd.put("trainname", json.get("trainname"));
+                    pd.put("remark", json.get("remark"));
+                    pd.put("cate", json.get("cate"));
+                    pd.put("cztime", getTime());
+                    trainrecoManager.updateTrainreco(pd);
+                    object.put("success", "true");
+                } else if (cmd.equals("deletetrainreco")) {
+                    pd.put("id", json.get("id"));
+                    trainrecoManager.deleteTrainrecoById(pd);
+                    object.put("success", "true");
+                } else if (cmd.equals("persondetial")) {
+                    pd.put("uid", json.get("uid"));
+                    String cate = json.getString("cate");
+                    PageData list = new PageData();
+                    if (cate.equals("1")) {
+                        list = trainrecoManager.findcompany(pd);
+                    } else if (cate.equals("2")) {
+                        list = trainrecoManager.findperson(pd);
+                    } else if (cate.equals("3")) {
+                        list = trainrecoManager.findjzbtry(pd);
+                    } else if (cate.equals("4")) {
+                        list = trainrecoManager.findpoverty(pd);
+                    } else if (cate.equals("5")) {
+                        list = trainrecoManager.findsbbtry(pd);
+                    } else if (cate.equals("6")) {
+                        list = trainrecoManager.findgraduate(pd);
+                    } else if (cate.equals("7")) {
+                        list = trainrecoManager.findotherperson(pd);
+                    }
+                    object.put("data", list);
+                    object.put("success", "true");
+                } else if (cmd.equals("jobreturnlist")) {
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("name", json.getString("name"));
+                    pd.put("type", json.getString("type"));
+                    pd.put("cate", json.getString("cate"));
+                    pd.put("result", json.getString("result"));
+                    page.setPd(pd);
+                    List<PageData> list = trainrecoManager.JobReturnlistPage(page);
+
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                } else if (cmd.equals("jobcaselist")) {
+                    pd.put("uid", json.getString("uid"));
+                    PageData list = trainrecoManager.jobcaselist(pd);
+                    object.put("data", list);
+                    object.put("success", "true");
+                } else if (cmd.equals("iujobcase")) {
+                    String tasktype = json.getString("tasktype");
+                    String uid = "";
+                    if ("0".equals(tasktype) || "1".equals(tasktype)){
+                        uid = json.getString("uid");
+                    }else if ("2".equals(tasktype) || "3".equals(tasktype)){
+                        uid = json.get("uid").toString();
+                    }
+                    pd.put("czman",pd_token.getString("ZXYH"));
+                    pd.put("uid",uid);
+                    pd.put("ucid",json.get("ucid"));
+                    companyService.saveRecord(pd);
+                    String ucid = json.getString("ucid");
+                    PageData pageData = new PageData();
+                    pageData.put("ucid",ucid);
+                    List<PageData> list = revrecordManager.HaveUcid(pageData);
+                    if (list.size()==0){
+
+                        //回访记录新增
+                        System.out.println("新增");
+                        pd.put("kssj", json.getString("kssj"));
+                        pd.put("zjhm", json.getString("zjhm"));
+                        pd.put("zxid", pd_token.getString("ZXID"));
+                        pd.put("isjt", json.getString("isjt"));
+                        pd.put("remark", json.getString("remark"));
+                        pd.put("ucid", json.getString("ucid"));
+                        pd.put("tasktype", json.getString("tasktype"));
+                        pd.put("uid", uid);
+                        pd.put("result", json.getString("result"));
+                        pd.put("cztime", getTime());
+                        pd.put("czman", pd_token.getString("ZXID"));
+                        pd.put("cate", json.getString("cate"));
+                        pd.put("name", json.getString("name"));
+                        pd.put("unconnet", json.getString("unconnet"));
+                        revrecordManager.insertRevrecord(pd);
+                        //就业信息的修改新增
+                        if ("0".equals(tasktype)){
+
+                            pd.put("uid", uid);
+                            pd.put("jobtime", json.getString("jobtime"));
+                            pd.put("jobtype", json.getString("jobtype"));
+                            pd.put("jobunit", json.getString("jobunit"));
+                            pd.put("jobname", json.getString("jobname"));
+                            pd.put("case", json.getString("case"));
+                            pd.put("czman", pd_token.getString("ZXID"));
+                            pd.put("cztime", getTime());
+                            PageData pageData1 = new PageData();
+                            pageData1.put("uid",uid);
+                            List<PageData> findjobcaselist = trainrecoManager.findjobcaselist(pageData1);
+                            if (findjobcaselist.size()==0){
+                                trainrecoManager.insertjobreturn(pd);
+                            }else {
+                                String id="";
+                                for (PageData pageData2 : findjobcaselist) {
+                                    id=pageData2.get("id").toString();
+                                }
+                                pd.put("id", id);
+                                trainrecoManager.updatejobreturn(pd);
+                            }
+                        }
+                        object.put("success", "true");
+                    }else {
+                        System.out.println("修改");
+                        pd.put("kssj", json.getString("kssj"));
+                        pd.put("zjhm", json.getString("zjhm"));
+                        pd.put("zxid", pd_token.getString("ZXID"));
+                        pd.put("isjt", json.getString("isjt"));
+                        pd.put("remark", json.getString("remark"));
+                        pd.put("ucid", json.getString("ucid"));
+                        pd.put("tasktype", json.getString("tasktype"));
+                        pd.put("uid", uid);
+                        pd.put("result", json.getString("result"));
+                        pd.put("cztime", getTime());
+                        pd.put("czman", pd_token.getString("ZXID"));
+                        pd.put("cate", json.getString("cate"));
+                        pd.put("name", json.getString("name"));
+                        pd.put("unconnet", json.getString("unconnet"));
+                        revrecordManager.updateRevrecordByUcid(pd);
+                        //就业信息的修改新增
+                        if ("0".equals(tasktype)){
+                            pd.put("id", json.getString("id"));
+                            pd.put("uid", uid);
+                            pd.put("jobtime", json.getString("jobtime"));
+                            pd.put("jobtype", json.getString("jobtype"));
+                            pd.put("jobunit", json.getString("jobunit"));
+                            pd.put("jobname", json.getString("jobname"));
+                            pd.put("case", json.getString("case"));
+                            pd.put("czman", pd_token.getString("ZXID"));
+                            pd.put("cztime", getTime());
+                            PageData pageData1 = new PageData();
+                            pageData1.put("uid",uid);
+                            List<PageData> findjobcaselist = trainrecoManager.findjobcaselist(pageData1);
+                            if (findjobcaselist.size()==0){
+                                trainrecoManager.insertjobreturn(pd);
+                            }else {
+                                String id="";
+                                for (PageData pageData2 : findjobcaselist) {
+                                    id=pageData2.get("id").toString();
+                                }
+                                pd.put("id", id);
+                                trainrecoManager.updatejobreturn(pd);
+                            }
+                        }
+                        object.put("success", "true");
+                    }
+                } else if (cmd.equals("misscalllist")) {
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("dhhm", json.get("dhhm"));
+                    pd.put("result", json.get("result"));
+                    pd.put("starttime", json.get("starttime"));
+                    pd.put("endtime", json.get("endtime"));
+                    page.setPd(pd);
+                    List<PageData> list = trainrecoManager.misscalllistPage(page);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                } else if (cmd.equals("leavemsglist")) {
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("zjhm", json.get("zjhm"));
+                    pd.put("result", json.get("result"));
+                    pd.put("starttime", json.get("starttime"));
+                    pd.put("endtime", json.get("endtime"));
+                    page.setPd(pd);
+                    List<PageData> list = trainrecoManager.leavemsglistPage(page);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                } else if (cmd.equals("SignupCompany")) {
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("keywords", json.get("keywords"));
+                    pd.put("result", json.get("result"));
+                    page.setPd(pd);
+                    List<PageData> list = trainrecoManager.SignupCompanylistPage(page);
+                    if (list.size()>0){
+                        for (PageData pageData : list) {
+                            PageData pageData1 = new PageData();
+                            pageData1.put("uid",pageData.getString("uid"));
+                            PageData getsignnum = trainrecoManager.getsignnum(pageData1);
+                            pageData.put("count",getsignnum.get("count"));
+                        }
+                    }
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                }else if (cmd.equals("SignupPerson")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("uid", json.get("uid"));
+                    page.setPd(pd);
+                    List<PageData> list = trainrecoManager.SignupPersonlistPage(page);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                }else if (cmd.equals("updateisjobAll")){
+
+                    String uids = json.getString("uids");
+                    String isjobs = json.getString("isjobs");
+                    String jobaddrs = json.getString("jobaddrs");
+                    if (uids.contains(",")){
+                        String[] splituid = uids.split(",");
+                        String[] splitisjob = isjobs.split(",");
+                        String[] splitjobaddr = jobaddrs.split(",");
+                        for (int i = 0; i < splituid.length; i++) {
+                            PageData pageData = new PageData();
+                            pageData.put("uid",splituid[i]);
+                            pageData.put("isjob",splitisjob[i]);
+                            pageData.put("jobaddr",splitjobaddr[i]);
+                            System.out.println(pageData);
+                            trainrecoManager.updateisjobAll(pageData);
+                        }
+                    }else {
+                        PageData pageData = new PageData();
+                        pageData.put("uid",uids);
+                        pageData.put("isjob",isjobs);
+                        pageData.put("jobaddr",jobaddrs);
+                        trainrecoManager.updateisjobAll(pageData);
+                    }
+                    object.put("success", "true");
+                }
+            } else {
+                object.put("success", "false");
+                object.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            object.put("success", "false");
+            object.put("msg", "异常");
+        }
+
+        return object;
+    }
+
+    public String getTime() {
+        Date date = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(date);
+    }
+}

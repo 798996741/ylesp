@@ -1,0 +1,32 @@
+package com.xxgl.task;
+
+import javax.annotation.Resource;
+
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+
+import com.fh.service.system.dictionaries.DictionariesManager;
+import com.xxgl.service.mng.WorkorderManager;
+@Component
+public class AutoRunTask {
+    
+	@Resource(name="workorderService")
+	private WorkorderManager workorderService;
+	
+    @Scheduled(cron = "0/5 * * * * ? ") // 间隔5秒执行
+    public void execute() throws Exception {
+    	taskCycle();
+	}
+    
+    public void taskCycle() {
+    	try {
+			//workorderService.getWorkorderList("","");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        //System.out.println("使用SpringMVC框架配置定时任务");
+    }
+}

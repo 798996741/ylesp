@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TespRevrecordMapper">
+
+
+    <select id="findrevrecordlistPage" resultType="pd" parameterType="Page">
+        SELECT
+          a.id,
+          DATE_FORMAT (a.kssj, '%Y-%m-%d %H:%i:%s') kssj,
+          a.zjhm,
+          a.zxid,
+          a.isjt,
+          a.remark,
+          a.tasktype,
+          a.uid,
+          a.result,
+         a.czman,
+          DATE_FORMAT (a.cztime, '%Y-%m-%d %H:%i:%s') cztime,
+          a.cate,
+          a.name,
+          a.unconnet,
+          b.zxxm,
+          d.name AS catename,
+          c.lywj as lywj
+        FROM
+          tesp_revrecord a
+          LEFT JOIN tzxlb b
+            ON a.zxid = b.zxid
+        left join tesp_pk_record pk on  pk.uid=a.uid
+        left join (SELECT
+        a.id,
+        a.zjhm,
+        a.lysj,
+        a.ucid,
+        CONCAT(CONCAT(b.param_value, DATE_FORMAT(a.lysj,'%Y-%m-%d'),'/'),a.lywj) AS lywj
+        FROM
+        tRecord a,
+        sys_param b
+        WHERE  b.param_code = 'recordsvr'
+        ORDER BY id DESC) c on c.ucid = pk.ucid
+        left join sys_dictionaries d on a.cate=d.DICTIONARIES_ID
+        where 1=1
+        <if test="pd.uid != null and pd.uid != ''">
+            and uid = #{pd.uid}
+        </if>
+        <if test="pd.isjt != null and pd.isjt != ''">
+            and a.isjt = #{pd.isjt}
+        </if>
+        <if test="pd.cate != null and pd.cate != ''">
+            and cate = #{pd.cate}
+        </if>
+        <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+            and kssj BETWEEN #{pd.starttime} and #{pd.endtime}
+        </if>
+        <if test="pd.keywords != null and pd.keywords != ''">
+            AND (
+            a.kssj LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.zjhm LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.zxid LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.isjt LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.remark LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.tasktype LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.uid LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.result LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.cztime LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.czman LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.cate LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            a.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            b.zxxm LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+        order by a.kssj desc
+    </select>
+
+
+
+    <!--新增所有列-->
+    <insert id="insertRevrecord" parameterType="pd">
+        insert into ylesp.tesp_revrecord(kssj, zjhm, zxid, isjt, remark, tasktype, uid, result, cztime, czman, cate,name,unconnet)
+        values (#{kssj}, #{zjhm}, #{zxid}, #{isjt}, #{remark}, #{tasktype}, #{uid}, #{result}, #{cztime}, #{czman}, #{cate}, #{name}, #{unconnet})
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="updateRevrecord" parameterType="pd">
+        update ylesp.tesp_revrecord
+            set
+            <if test="kssj != null">
+                kssj = #{kssj},
+            </if>
+            <if test="zjhm != null and zjhm != ''">
+                zjhm = #{zjhm},
+            </if>
+            <if test="zxid != null and zxid != ''">
+                zxid = #{zxid},
+            </if>
+            <if test="isjt != null and isjt != ''">
+                isjt = #{isjt},
+            </if>
+            <if test="remark != null and remark != ''">
+                remark = #{remark},
+            </if>
+            <if test="tasktype != null and tasktype != ''">
+                tasktype = #{tasktype},
+            </if>
+            <if test="uid != null and uid != ''">
+                uid = #{uid},
+            </if>
+            <if test="result != null and result != ''">
+                result = #{result},
+            </if>
+            <if test="cztime != null">
+                cztime = #{cztime},
+            </if>
+            <if test="czman != null and czman != ''">
+                czman = #{czman},
+            </if>
+            <if test="cate != null and cate != ''">
+                cate = #{cate},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="unconnet != null and unconnet != ''">
+                unconnet = #{unconnet}
+            </if>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteRevrecord" parameterType="pd">
+        delete from ylesp.tesp_revrecord where id = #{id}
+    </delete>
+
+    <!--录音纪录表 -->
+    <select id="tesprecordlistPage" parameterType="Page" resultType="pd">
+        select * from (
+         SELECT
+          a.*,
+          c.zxxm,
+          e.thfx,
+          e.zjhm,
+          g.name,
+           '2' AS TYPE,
+           '个人' AS typename
+
+        FROM
+          (SELECT
+            a.id,
+        DATE_FORMAT (a.lysj, '%Y-%m-%d %H:%i:%s') lysj,
+            a.ucid,
+            a.zxid,
+            CONCAT(
+              CONCAT(
+                b.param_value,
+                DATE_FORMAT(a.lysj, '%Y-%m-%d'),
+                '/'
+              ),
+              a.lywj
+            ) AS lywj
+          FROM
+            tRecord a,
+            sys_param b
+          WHERE b.param_code = 'recordsvr'
+          ORDER BY id DESC) a
+          LEFT JOIN tthjl e
+            ON a.ucid = e.ucid
+          LEFT JOIN tzxlb c
+            ON a.zxid = c.zxid
+          LEFT JOIN tesp_pk_record f
+            ON a.ucid = f.ucid
+          LEFT JOIN tesp_person g
+            ON g.uid = f.uid
+            UNION ALL
+          SELECT
+          a.*,
+          c.zxxm,
+          e.thfx,
+          e.zjhm,
+          g.name,
+           '1' AS TYPE,
+           '公司' AS typename
+        FROM
+          (SELECT
+            a.id,
+        DATE_FORMAT (a.lysj, '%Y-%m-%d %H:%i:%s') lysj,
+            a.ucid,
+            a.zxid,
+            CONCAT(
+              CONCAT(
+                b.param_value,
+                DATE_FORMAT(a.lysj, '%Y-%m-%d'),
+                '/'
+              ),
+              a.lywj
+            ) AS lywj
+          FROM
+            tRecord a,
+            sys_param b
+          WHERE b.param_code = 'recordsvr'
+          ORDER BY id DESC) a
+          LEFT JOIN tthjl e
+            ON a.ucid = e.ucid
+          LEFT JOIN tzxlb c
+            ON a.zxid = c.zxid
+          LEFT JOIN tesp_pk_record f
+            ON a.ucid = f.ucid
+          LEFT JOIN tesp_company g
+            ON g.uid = f.uid
+        ) a where 1=1
+        <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+            and lysj BETWEEN #{pd.starttime} and #{pd.endtime}
+        </if>
+        <if test="pd.type!=null and pd.type!=''">
+            and type=#{pd.type}
+        </if>
+        <if test="pd.keywords != null and pd.keywords != ''">
+            AND (
+            zxxm LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            thfx LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            zjhm LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+            typename LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+        order by lysj desc
+    </select>
+
+</mapper>

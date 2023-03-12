@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DocMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		t_doc
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">	
+  		doctype_id,
+		doctitle,
+		doccont,
+		docsource,
+		docauthor,
+		docfile,
+		doctype,
+		createman,
+		createdate,	
+		lastclickdate,
+		lastmoddate,
+		uid,
+		type,
+		dept,
+		ishot,
+		validate
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{doctype_id},
+		#{doctitle},
+		#{doccont},
+		#{docsource},
+		#{docauthor},
+		#{docfile},
+		#{doctype},
+		#{createman},
+		now(),  
+		#{lastclickdate},
+		#{lastmoddate},
+		#{uid},
+		#{type},
+		#{dept},
+		#{ishot},
+		#{validate}
+		
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 新增-->
+	<insert id="saveFile" parameterType="pd">
+		insert into 
+		t_docfile
+		(
+		uid,doc_file,doc_name,ext,createman,createdate
+		) values (
+		#{uid},#{doc_file},#{doc_name},#{ext},#{createman},now()
+		)
+	</insert>
+	
+	
+	<!-- 新增-->
+	<insert id="doccomment" parameterType="pd">
+		insert into 
+		t_doc_comment
+		(
+			doc_id,comment,createman,createdate
+		) values (
+			#{doc_id},#{comment},#{createman},now()
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id = #{id}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			doctype_id=#{doctype_id},
+		doctitle=#{doctitle},
+		doccont=#{doccont},
+		docsource=#{docsource},
+		docauthor=#{docauthor},
+		docfile=#{docfile},
+		doctype=#{doctype},
+		createman=#{createman},
+		lastmoddate=now(),
+		validate=#{validate},
+		ishot=#{ishot}
+		<if test="dept!= null and dept!= ''"><!-- 检索 -->
+			,dept = #{dept}
+		</if>
+		where 
+		id = #{id}
+	</update>
+	
+	<!-- 修改 -->
+	<update id="sh" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			issh=#{issh},
+		shman=#{shman},
+		shtime=now(),
+		shyj=#{shyj}
+		
+		where 
+		id = #{id}
+	</update>
+	
+	
+	<!-- 修改 -->
+	<update id="clicknum" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			clicknum=clicknum+1,
+			lastclickdate=now()
+		where 
+		id = #{id}
+	</update>
+	
+		<!-- 修改 -->
+	<update id="editTokenid" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			tokenid=#{TOKENid}
+		where 
+		ZXYH = #{ZXYH}
+	</update>
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByid" parameterType="pd" resultType="pd">
+		select 
+			a.uid,a.doctype_id,   
+			a.doctitle, a.doccont, a.docsource,   
+			a.docauthor,a.docfile, a.doctype,   
+			a.createman,   a.createdate,    
+			lastclickdate,   lastmoddate,
+			a.id,b.name as doctype_name,c.zxxm,
+			DATE_FORMAT(a.validate,'%Y-%m-%d') AS validate ,
+			a.shman,
+			a.ishot,
+			d.zxxm as shmanName,
+			e.name as deptName
+		 from 
+		<include refid="tableName"></include> a left join 
+		t_doctype b on a.doctype_id=b.id
+		left join tzxlb c on a.createman=c.id
+		left join tzxlb d on a.shman=d.id
+		left join t_area e on a.dept=e.area_code
+		where 
+			a.id = #{id}
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findFileByuid" parameterType="pd" resultType="pd">
+		select 
+			*
+		 from 
+		 t_docfile
+		where 
+			uid = #{uid}
+	</select>
+	
+	
+	<!-- 列表 -->
+	<select id="datalist" parameterType="page" resultType="pd">
+		select
+			a.*,
+			DATE_FORMAT(validate,'%Y-%m-%d') AS format_validate ,
+			case when DATE_FORMAT(NOW(),'%Y-%m-%d')&gt;= DATE_FORMAT(date_add(validate, interval 1 DAY),'%Y-%m-%d') then 0 else 1 end as isvalidate,
+			b.name as doctypename,
+	  		c.zxxm
+		from 
+		<include refid="tableName"></include> a  
+		left join t_doctype b on a.doctype_id=b.id
+		left join tzxlb c on a.createman=c.id
+		where 1=1
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					a.doctitle LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					a.doccont LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+					a.docsource LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					
+				)
+		</if>
+		<if test="pd.doctype_id!= null and pd.doctype_id != ''">
+			
+			and FIND_IN_SET(a.doctype_id, docTypeTree(#{pd.doctype_id}))
+		</if>
+		<if test="pd.ishot!= null and pd.ishot != ''">
+			and a.ishot=#{pd.ishot}
+		</if>
+		<if test="pd.doctype!= null and pd.doctype!= ''">
+			and a.doctype=#{pd.doctype}
+		</if>
+		<if test="pd.type!= null and pd.type == '1'"><!-- 检索 -->
+			and a.type = #{pd.type}
+		</if>
+		<if test="pd.type!= null and pd.type == '2'"><!-- 检索 -->
+			and a.createman = #{pd.userid}
+		</if>
+		<if test="pd.type!= null and pd.type == '3'"><!-- 检索 -->
+			and a.dept = #{pd.dept}
+		</if>
+		order by a.createdate desc
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+			a.*,
+			DATE_FORMAT(validate,'%Y-%m-%d') AS format_validate ,
+			case when DATE_FORMAT(NOW(),'%Y-%m-%d')>= DATE_FORMAT(date_add(validate, interval 1 DAY),'%Y-%m-%d') then '0' else '1' end as isvalidate,
+			b.name as doctypename,
+	  		c.zxxm,
+			d.zxxm as shmanName,
+			e.name as deptName
+		from 
+		<include refid="tableName"></include> a  
+		left join t_doctype b on a.doctype_id=b.id
+		left join tzxlb c on a.createman=c.id
+		left join tzxlb d on a.shman=d.id
+		left join t_area e on a.dept=e.area_code
+		where 1=1
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					a.doctitle LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					a.doccont LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+					a.docsource LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					
+				)
+		</if>
+		<if test="pd.ishot!= null and pd.ishot != ''">
+			and a.ishot=#{pd.ishot}
+		</if>
+		<if test="pd.doctype_id!= null and pd.doctype_id != ''">
+			
+			and FIND_IN_SET(a.doctype_id, docTypeTree(#{pd.doctype_id}))
+		</if>
+		<if test="pd.doctype!= null and pd.doctype!= ''">
+			and a.doctype=#{pd.doctype}
+		</if>
+		<if test="pd.type!= null and pd.type != ''"><!-- 检索 -->
+			and a.type = #{pd.type}
+		</if>
+		
+		<if test="pd.userid!= null and pd.userid != ''"><!-- 检索 -->
+			and a.createman = #{pd.userid}
+		</if>
+		<if test="pd.dept!= null and pd.dept != ''"><!-- 检索 -->
+			and a.dept = #{pd.dept}
+		</if>
+		<if test="pd.issh!= null and pd.issh != ''"><!-- 检索 -->
+			and a.issh = #{pd.issh}
+		</if>
+		order by a.createdate desc
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		a.*,
+		DATE_FORMAT(validate,'%Y-%m-%d') AS format_validate ,
+		
+		b.name as doctypename
+		from 
+		<include refid="tableName"></include> a  
+		left join t_doctype b on a.doctype_id=b.id
+		where 1=1
+		<if test="doctype_id!= null and doctype_id != ''">
+			and a.doctype_id = #{doctype_id}
+		</if>
+		<if test="ishot!= null and ishot != ''">
+			and a.ishot=#{ishot}
+		</if>
+	</select>
+	
+	
+	<!-- 列表(全部) -->
+	<select id="listAllComment" parameterType="pd" resultType="pd">
+		select
+		a.*,
+		DATE_FORMAT(validate,'%Y-%m-%d') AS format_validate ,
+		
+		b.doctitle,
+		c.NAME
+		from 
+		t_doc_comment a  
+		left join t_doc b on a.doc_id=b.id
+		left join SYS_USER c on a.createman=c.USERNAME
+		where 1=1
+		<if test="username!= null and username != ''">
+			and a.createman = #{username}
+		</if>
+		<if test="id!= null and id != ''">
+			and a.doc_id = #{id}
+		</if>
+		
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+             #{item}
+		</foreach>
+	</delete>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteFile" parameterType="String">
+		delete from
+		t_docfile
+		where 
+			id =#{id}
+	</delete>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAllFile" parameterType="String">
+		delete from
+		t_docfile
+		where 
+			uid =#{uid}
+	</delete>
+	
+	
+	<!-- 列表(全部) -->
+	<select id="findByIds" parameterType="pd" resultType="pd">
+		select
+			a.*,
+			DATE_FORMAT(validate,'%Y-%m-%d') AS format_validate ,
+			b.name as doctypename,
+			c.zxxm as createmanname,
+			d.name as createmanname1,
+			e.name as deptName
+		from 
+		<include refid="tableName"></include> a  
+		left join t_doctype b on a.doctype_id=b.id
+		left join tzxlb c on a.createman=c.id
+		left join sys_user d on a.createman=d.username
+		left join t_area e on a.dept=e.area_code
+		where 1=1
+		<if test="ids!= null and ids != ''">
+			and find_in_set(a.id,#{ids})
+		</if>
+	</select>
+	
+	
+	<!-- 351412933 -->
+</mapper>

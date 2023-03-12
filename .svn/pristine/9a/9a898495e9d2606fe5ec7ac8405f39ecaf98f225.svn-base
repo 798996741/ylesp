@@ -1,0 +1,12 @@
+package com.yulun.service.impl;
+
+import com.yulun.service.CompanyCountManager;
+import org.springframework.stereotype.Service;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-21 17:15
+ **/
+@Service("companyCountService")
+public class CompanyCountService implements CompanyCountManager {
+}

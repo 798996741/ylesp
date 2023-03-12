@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataStatMapper">
+	<select id="usertotal" parameterType="pd" resultType="pd">
+		SELECT
+		(a.num+f.num+i.num+h.num) total,
+		f.num company,
+		a.num person,
+		h.num employe,
+		i.num job
+		FROM
+		(SELECT COUNT(id) num FROM tesp_person where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) a
+		,(SELECT COUNT(id) num FROM tesp_company where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) f
+		,(SELECT COUNT(a.id) num FROM tesp_company a,(SELECT DISTINCT uid FROM tesp_employreg WHERE isvalid = 1 ) b  WHERE a.uid=b.uid
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.createdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) h
+		,(select count(a.id) num from tesp_person a,(SELECT DISTINCT uid FROM tesp_jobreg WHERE isvalid = 1 ) b  WHERE a.uid=b.uid
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.createdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) i
+	</select>
+
+	<select id="servtotal" resultType="pd" parameterType="pd">
+		SELECT (a.a+a.b+a.c+a.d+a.f) total,a.a employ,a.b job,a.c zczx,a.d ywyd,a.e qtfw,a.f jnpx
+		FROM (select
+		((SELECT COUNT(tj.id) FROM tesp_tj tj LEFT JOIN tesp_company p ON  p.uid=tj.uid WHERE NOT p.id  IS NULL AND tj.istj = 1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and tj.czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		)+
+		(SELECT COUNT(id) FROM tesp_employreg where 1=1  and isvalid='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and createdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		)
+		) a,
+		( (SELECT COUNT(tj.id) FROM tesp_tj tj LEFT JOIN tesp_person p ON  p.uid=tj.uid WHERE NOT p.id  IS NULL AND tj.istj = 1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and tj.czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		)+
+		(SELECT COUNT(id) FROM tesp_jobreg where 1=1  and isvalid='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and createdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		)
+		) b,
+		(SELECT COUNT(id) num FROM tesp_zczx where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) c,
+		(SELECT COUNT(id) num FROM tesp_ywyd where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) d,
+		(SELECT COUNT(id) num FROM tesp_qtfw where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) e,
+		((SELECT COUNT(id) FROM tesp_zczx WHERE (zczxname='9f46c34cf957458789b2cfbaa2f25eac' OR zczxname='4f2cf512d2ec48b6932080e974cb767e')
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		)+(SELECT COUNT(id) FROM tesp_trainreco where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		)
+		) f
+		) a
+
+	</select>
+
+	<select id="getjob" parameterType="pd" resultType="pd">
+		SELECT COUNT(a.id) as value,b.gwf AS name
+		FROM tesp_jobreg a
+		LEFT JOIN (SELECT a.*,b.gwflname AS gwf FROM tesp_jobtype a LEFT JOIN tesp_jobtype b ON a.parent_code=b.code WHERE b.gwflname IS NOT NULL) b ON
+		a.jobname=b.code WHERE b.gwf IS NOT NULL and a.isvalid='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		 GROUP BY name order by value desc LIMIT 0,10
+	</select>
+
+	<select id="getemploy" parameterType="pd" resultType="pd">
+		SELECT COUNT(a.id) as value,b.gwf AS name
+		FROM tesp_employreg a
+		LEFT JOIN (SELECT a.*,b.gwflname AS gwf FROM tesp_jobtype a LEFT JOIN tesp_jobtype b ON a.parent_code=b.code WHERE b.gwflname IS NOT NULL) b
+		ON a.jobname=b.code WHERE b.gwf IS NOT NULL and a.isvalid='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		GROUP BY name order by value desc LIMIT 0,10
+	</select>
+
+	<select id="getskill" resultType="pd" parameterType="pd">
+		SELECT (a.num+b.num) AS zpfw,(c.num+d.num )AS jyfw,e.num AS hffw,(g.num+h.num) AS zxfw,i.num AS zcfw FROM
+ 		 -- 求职推荐
+		(SELECT COUNT(c.id) num FROM  tesp_employreg c LEFT JOIN tesp_tj d ON c.id=d.regid and c.uid=d.uid WHERE 1=1 AND d.istj='1' and c.isvalid='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and d.czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) a,
+        -- 求职信息
+        (select count(id) num from tesp_jobreg where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+        ) b,
+        -- 用工推荐
+		(SELECT COUNT(c.id) num FROM  tesp_jobreg c LEFT JOIN tesp_tj d ON c.id=d.regid and c.uid=d.uid WHERE 1=1 AND d.istj='1' and c.isvalid='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and d.czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) c,
+        -- 用工信息
+		(select count(id) num from tesp_employreg where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		  ) d,
+		-- 回访信息
+        (SELECT (COUNT(id)) num FROM tesp_revrecord where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+        ) e,
+		-- 咨询业务
+		(SELECT COUNT(id) num FROM tesp_ywyd where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) g,
+		(SELECT COUNT(id) num FROM tesp_qtfw where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) h,
+		-- 政策服务
+        (SELECT COUNT(id) num FROM tesp_zczx where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		) i
+
+	</select>
+
+	<select id="quarterList" resultType="pd" parameterType="pd">
+		select  CAST(group_concat(month) AS CHAR) month,
+				CAST(group_concat(qztj) AS CHAR) qztj,
+				CAST(group_concat(ygtj) AS CHAR) ygtj,
+				CAST(group_concat(zczx) AS CHAR) zczx,
+				CAST(group_concat(ywyd) AS CHAR) ywyd,
+				CAST(group_concat(qtfw) AS CHAR) qtfw,
+				CAST(group_concat(jnpx) AS CHAR) jnpx from (
+                select 'product' as month,'就业推荐' as qztj,'用工推荐' as ygtj,'政策咨询' as zczx,'业务引导' as ywyd,'其他服务' as qtfw,'技能培训' as jnpx
+                union all
+                select  DATE_FORMAT((CURDATE() - INTERVAL 2 MONTH), '%m') as month,
+                        (SELECT COUNT(b.id) num FROM tesp_jobreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1' and  b.czdate between DATE_SUB(CURDATE(), INTERVAL 2 MONTH) and concat(DATE_FORMAT((CURDATE() - INTERVAL 2 MONTH), '%Y-%m'),'-31')) qztj,
+                        (SELECT COUNT(b.id) num FROM tesp_employreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1' and  b.czdate between DATE_SUB(CURDATE(), INTERVAL 2 MONTH) and concat(DATE_FORMAT((CURDATE() - INTERVAL 2 MONTH), '%Y-%m'),'-31')) ygtj,
+                        (SELECT COUNT(id) num FROM tesp_zczx where 1=1 and czdate between DATE_SUB(CURDATE(), INTERVAL 2 MONTH) and concat(DATE_FORMAT((CURDATE() - INTERVAL 2 MONTH), '%Y-%m'),'-31')) zczx,
+                        (SELECT COUNT(id) num FROM tesp_ywyd where 1=1 and czdate between DATE_SUB(CURDATE(), INTERVAL 2 MONTH) and concat(DATE_FORMAT((CURDATE() - INTERVAL 2 MONTH), '%Y-%m'),'-31')) ywyd,
+                        (SELECT COUNT(id) num FROM tesp_qtfw where 1=1 and czdate between DATE_SUB(CURDATE(), INTERVAL 2 MONTH) and concat(DATE_FORMAT((CURDATE() - INTERVAL 2 MONTH), '%Y-%m'),'-31')) qtfw,
+                        (SELECT COUNT(id) num FROM tesp_trainreco where 1=1 and cztime between DATE_SUB(CURDATE(), INTERVAL 2 MONTH) and concat(DATE_FORMAT((CURDATE() - INTERVAL 2 MONTH), '%Y-%m'),'-31')) jnpx
+                union all
+                select  DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%m') as month,
+                        (SELECT COUNT(b.id) num FROM tesp_jobreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1' and  b.czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-01') and concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-31')) qztj,
+                        (SELECT COUNT(b.id) num FROM tesp_employreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1' and  b.czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-01') and concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-31')) ygtj,
+                        (SELECT COUNT(id) num FROM tesp_zczx where 1=1 and czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-01') and concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-31')) zczx,
+                        (SELECT COUNT(id) num FROM tesp_ywyd where 1=1 and czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-01') and concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-31')) ywyd,
+                        (SELECT COUNT(id) num FROM tesp_qtfw where 1=1 and czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-01') and concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-31')) qtfw,
+                        (SELECT COUNT(id) num FROM tesp_trainreco where 1=1 and cztime between concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-01') and concat(DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH), '%Y-%m'),'-31')) jnpx
+                union all
+                select  DATE_FORMAT((CURDATE() - INTERVAL 0 MONTH), '%m') as month,
+                        (SELECT COUNT(b.id) num FROM tesp_jobreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1' and  b.czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 0 MONTH), '%Y-%m'),'-01') and DATE_SUB(CURDATE(), INTERVAL 0 MONTH)) qztj,
+                        (SELECT COUNT(b.id) num FROM tesp_employreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1' and  b.czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 0 MONTH), '%Y-%m'),'-01') and DATE_SUB(CURDATE(), INTERVAL 0 MONTH)) ygtj,
+                        (SELECT COUNT(id) num FROM tesp_zczx where 1=1 and czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 0 MONTH), '%Y-%m'),'-01') and DATE_SUB(CURDATE(), INTERVAL 0 MONTH)) zczx,
+                        (SELECT COUNT(id) num FROM tesp_ywyd where 1=1 and czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 0 MONTH), '%Y-%m'),'-01') and DATE_SUB(CURDATE(), INTERVAL 0 MONTH)) ywyd,
+                        (SELECT COUNT(id) num FROM tesp_qtfw where 1=1 and czdate between concat(DATE_FORMAT((CURDATE() - INTERVAL 0 MONTH), '%Y-%m'),'-01') and DATE_SUB(CURDATE(), INTERVAL 0 MONTH)) qtfw,
+                        (SELECT COUNT(id) num FROM tesp_trainreco where 1=1 and cztime between concat(DATE_FORMAT((CURDATE() - INTERVAL 0 MONTH), '%Y-%m'),'-01') and DATE_SUB(CURDATE(), INTERVAL 0 MONTH)) jnpx
+
+            ) a
+	</select>
+
+<!--	就业情况-->
+	<select id="isjobTosex" resultType="pd" parameterType="pd">
+		SELECT
+        COUNT(id) DATA,
+        (
+          CASE
+            WHEN isjob = '0'
+            THEN '失业'
+            WHEN isjob = '1'
+            THEN '就业'
+			WHEN isjob = '4'
+			THEN '就业'
+            ELSE ''
+          END
+        ) isjob,
+        (
+          CASE
+            WHEN sex = '1'
+            THEN '男'
+            WHEN sex = '2'
+            THEN '女'
+            ELSE ''
+          END
+        ) sex
+      FROM
+        tesp_person p
+      WHERE 1 = 1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and createdate BETWEEN #{starttime} and #{endtime}
+		</if>
+        AND (isjob = '0'
+          OR isjob = '1'
+		OR isjob = '4')
+        AND (sex = '1'
+          OR sex = '2')
+      GROUP BY isjob,
+        sex
+	</select>
+
+	<select id="isjobToxl" resultType="pd" parameterType="pd">
+		SELECT
+        COUNT(id) DATA,
+        (
+          CASE
+            WHEN isjob = '0'
+            THEN '失业'
+            WHEN isjob = '1'
+            THEN '就业'
+			WHEN isjob = '4'
+			THEN '就业'
+            ELSE ''
+          END
+        ) isjob,
+        (SELECT NAME FROM sys_dictionaries dic WHERE dic.DICTIONARIES_ID=p.xl) xl
+      FROM
+        tesp_person p
+      WHERE 1 = 1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and createdate BETWEEN #{starttime} and #{endtime}
+		</if>
+        AND (isjob = '0'
+          OR isjob = '1'
+		OR isjob = '4')
+          AND xl IS NOT NULL AND xl!=''
+      GROUP BY isjob,
+        xl
+	</select>
+
+	<select id="isjobToage" resultType="pd" parameterType="pd">
+		SELECT * FROM (
+			SELECT
+			COUNT(id) DATA,
+			(
+			CASE
+			WHEN isjob = '0'
+			THEN '失业'
+			WHEN isjob = '1'
+			THEN '就业'
+			WHEN isjob = '4'
+			THEN '就业'
+			ELSE ''
+			END
+			) isjob,
+			(
+			CASE
+			WHEN age &gt;=16 AND age &lt;= 30
+			THEN '16-30'
+			WHEN age &gt;=30 AND age &lt;= 40
+			THEN '30-40'
+			WHEN age &gt;=40 AND age &lt;= 50
+			THEN '40-50'
+			END
+			) age
+			FROM
+			tesp_person p
+			WHERE 1 = 1
+			<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+				and createdate BETWEEN #{starttime} and #{endtime}
+			</if>
+			AND (isjob = '0'
+			OR isjob = '1'
+			OR isjob = '4'
+			)
+			GROUP BY isjob,
+			(
+			CASE
+			WHEN age &gt;=16 AND age &lt;= 30
+			THEN '16-30'
+			WHEN age &gt;=30 AND age &lt;= 40
+			THEN '30-40'
+			WHEN age &gt;=40 AND age &lt;= 50
+			THEN '40-50'
+			END
+			)
+		) a  WHERE age IS NOT NULL
+	</select>
+
+<!--	就业情况结束-->
+
+
+	<select id="zchot" parameterType="pd" resultType="pd">
+	  SELECT
+	  COUNT(id),
+	  (SELECT
+		NAME
+	  FROM
+		sys_dictionaries dic
+	  WHERE dic.`DICTIONARIES_ID` = zc.zczxname) zczxname
+	FROM
+	  tesp_zczx zc
+	WHERE 1 = 1
+	GROUP BY zczxname
+	ORDER BY COUNT(id) DESC
+	LIMIT 5
+	</select>
+
+	<select id="zctype" parameterType="pd" resultType="pd">
+	  SELECT
+	  COUNT(id),
+	  (SELECT
+		NAME
+	  FROM
+		sys_dictionaries dic
+	  WHERE dic.`DICTIONARIES_ID` = zc.zczxname) zczxname
+	FROM
+	  tesp_zczx zc
+	WHERE 1 = 1
+	and zczxtype='086d5bf998bc45eaa9056e58fad53411'
+	GROUP BY zczxname
+	ORDER BY COUNT(id) DESC
+	LIMIT 5
+	</select>
+
+	<select id="zctj" parameterType="pd" resultType="pd">
+	  SELECT
+	  COUNT(id),
+	  (SELECT
+		NAME
+	  FROM
+		sys_dictionaries dic
+	  WHERE dic.`DICTIONARIES_ID` = zc.zczxname) zczxname
+	FROM
+	  tesp_zczx zc
+	WHERE 1 = 1
+	and zczxtype='10aa7ad6fc6c45a287cab4a7ba4c78df'
+	GROUP BY zczxname
+	ORDER BY COUNT(id) DESC
+	LIMIT 5
+	</select>
+
+</mapper>

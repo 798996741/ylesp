@@ -1,0 +1,168 @@
+package com.yulun.controller.count;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.CompanyCountManager;
+import com.yulun.service.PersonCountManager;
+import com.yulun.utils.TimeHandle;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Handler;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-21 17:12
+ **/
+public class CompanyCountWeb implements CommonIntefate {
+        static final String SUCCESS = "success";
+        static final String MSG = "msg";
+        static final String FALSE = "false";
+        static final String TRUE = "true";
+        Integer pageIndex;
+        Integer pageSize;
+
+        @Resource(name = "zxlbService")
+        private ZxlbManager zxlbService;
+
+        @Resource(name = "personCountService")
+        private PersonCountManager personCountService;
+
+        @Resource(name = "companyCountService")
+        private CompanyCountManager companyCountService;
+
+        @Override
+        public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+                JSONObject object = new JSONObject();
+                PageData pd = new PageData();
+                String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+                PageData pd_stoken = new PageData();
+                JSONObject json = data.getJSONObject("data");
+                pd_stoken.put("TOKENID", json.get("tokenid"));
+//        try {
+                PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+                if (null == pd_token) {
+                        json.put(SUCCESS, FALSE);
+                        json.put(MSG, "请重新登陆");
+                        return object;
+                }
+
+                if ("companyCount".equals(cmd)) {
+                        String startTime = json.getString("startTime");
+                        String endTime = json.getString("endTime");
+                        String timeSlot = json.getString("timeSlot");
+                        // 判空  等于1才能正常运行
+                        double isNull = 0d;
+                        if (timeSlot != null && !"".equals(timeSlot)) {
+                                isNull += 1d;
+                        }
+                        if (startTime != null && !"".equals(startTime)) {
+                                isNull += 0.5d;
+                        }
+                        if (endTime != null && !"".equals(endTime)) {
+                                isNull += 0.5d;
+                        }
+                        Page page = new Page();
+                        page.setShowCount(5);
+                        page.setCurrentPage(1);
+                        if (isNull < 1d) {
+                                object.put(SUCCESS, FALSE);
+                                object.put(MSG, "StartTime and endTime or timeSolit is NULL");
+                                return object;
+                        } else if (isNull == 2d || isNull == 1.5d) {
+                                object.put(SUCCESS, FALSE);
+                                object.put(MSG, "StartTime and endTime and timeSolit Can't together");
+                                return object;
+                        }
+                        // 传值
+                        if (timeSlot == null || "".equals(timeSlot)) {
+                                pd.put("startTime", startTime);
+                                pd.put("endTime", endTime);
+                        } else {
+                                Map<String, String> time = TimeHandle.getCountTime(timeSlot);
+                                String msg = time.get("msg");
+                                if (msg != null && !"".equals(msg)) {
+                                        object.put(MSG, msg);
+                                        object.put(SUCCESS, FALSE);
+                                        return object;
+                                }
+                                startTime = time.get("startTime");
+                                endTime = time.get("endTime");
+                                pd.put("startTime", startTime);
+                                pd.put("endTime", endTime);
+                        }
+                        page.setPd(pd);
+                        //企业总数
+                        PageData companyCount = companyCountService.companyCount(pd);
+                        pd.putAll(companyCount);
+                        //用工推荐总数
+                        PageData recruitPeopleCount = companyCountService.recruitPeopleCount(pd);
+                        pd.putAll(recruitPeopleCount);
+                        //企业总数新增
+                        PageData todayTime = new PageData();
+                        PageData yesterdayTime = new PageData();
+                        todayTime.put("endTime", TimeHandle.getTodayTime());
+                        yesterdayTime.put("endTime", TimeHandle.getYesterdayTime());
+                        PageData todayCompanCount = companyCountService.companyCount(todayTime);
+                        PageData yesterdayCompanCount = companyCountService.companyCount(yesterdayTime);
+                        String companyCountNew = todayCompanCount.get("companyCount").toString();
+                        String companyCountOld = yesterdayCompanCount.get("companyCount").toString();
+                        Integer companyCountChange = 0;
+                        if (companyCountNew != null && !"".equals(companyCountNew) && companyCountOld != null && !"".equals(companyCountOld)) {
+                                companyCountChange = Integer.valueOf(companyCountNew) -
+                                        Integer.valueOf(companyCountOld);
+                        }
+                        pd.put("companyCountChange", companyCountChange);
+                        //用工推荐新增
+                        PageData todayRecruitPeopleCount = companyCountService.recruitPeopleCount(todayTime);
+                        PageData YesterdayRecruitPeopleCount = companyCountService.recruitPeopleCount(yesterdayTime);
+                        String recruitPeopleCountNew = todayRecruitPeopleCount.get("recruitPeopleCount").toString();
+                        String recruitPeopleCountOld = YesterdayRecruitPeopleCount.get("recruitPeopleCount").toString();
+                        Integer recruitPeopleChange = 0;
+                        if (recruitPeopleCountNew != null && recruitPeopleCountOld != null && !"".equals(recruitPeopleCountNew) && !"".equals(recruitPeopleCountOld)) {
+                                recruitPeopleChange =
+                                        Integer.valueOf(recruitPeopleCountNew) -
+                                                Integer.valueOf(recruitPeopleCountOld);
+                        }
+                        pd.put("recruitPeopleCountChange", recruitPeopleChange);
+                        //岗位分布
+                        List<PageData> jobCount = companyCountService.jobCount(page);
+                        pd.put("jobCount", jobCount);
+                        //招工群体占比
+                        List<PageData> recruitProportion = companyCountService.recruitProportion(page);
+                        PageData recruitPd = new PageData();
+                        recruitPd.put("高校毕业生", "0");
+                        recruitPd.put("社保补贴人员", "0");
+                        recruitPd.put("建档立卡贫困人员", "0");
+                        recruitPd.put("见证补贴人员", "0");
+                        recruitPd.put("线上报名人员", "0");
+                        recruitPd.put("其他人员", "0");
+                        for (PageData pageData : recruitProportion) {
+                                String age = pageData.getString("name");
+                                String count = pageData.get("value").toString();
+                                if (age != null && !"".equals(age) && count != null && !"".equals(count)) {
+                                        recruitPd.put(age, count);
+                                }
+                        }
+                        pd.put("recruitCount", recruitPd);
+                        //用工缺口人数
+
+
+                        object.put("data", pd);
+                }
+
+//        } catch (Exception e) {
+//            object.put(SUCCESS, FALSE);
+//            object.put(MSG, "数据异常");
+//
+//        } finally {
+//            return object;
+//        }
+                return object;
+        }
+}

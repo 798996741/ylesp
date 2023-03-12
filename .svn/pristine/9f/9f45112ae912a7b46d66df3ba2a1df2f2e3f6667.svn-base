@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BaseColumnsMapper">
+
+    <!--表名 -->
+    <sql id="tableName">
+		SYS_DICTIONARIES
+	</sql>
+
+    <!-- 字段 -->
+    <sql id="Field">
+		NAME,
+		NAME_EN,
+		BIANMA,
+		ORDER_BY,
+		PARENT_ID,
+		BZ,
+		TBSNAME,
+		TBFIELD,
+		YNDEL,
+		DICTIONARIES_ID,
+		EXTEND1
+	</sql>
+
+    <!-- 字段值 -->
+    <sql id="FieldValue">
+		#{NAME},
+		#{NAME_EN},
+		#{BIANMA},
+		#{ORDER_BY},
+		#{PARENT_ID},
+		#{BZ},
+		#{TBSNAME},
+		#{TBFIELD},
+		#{YNDEL},
+		#{DICTIONARIES_ID},
+		#{EXTEND1}
+	</sql>
+
+    <!-- 修改 -->
+    <update id="edit" parameterType="pd">
+        update
+        <include refid="tableName"></include>
+        set
+        NAME = #{NAME},
+        NAME_EN = #{NAME_EN},
+        ORDER_BY = #{ORDER_BY},
+        BZ = #{BZ},
+        TBSNAME = #{TBSNAME},
+        TBFIELD = #{TBFIELD},
+        DICTIONARIES_ID = DICTIONARIES_ID
+        where
+        DICTIONARIES_ID = #{DICTIONARIES_ID}
+    </update>
+
+    <!-- 通过父ID获取ID和名字 -->
+    <select id="findByParentId" parameterType="pd" resultType="pd">
+        select
+        NAME,
+        DICTIONARIES_ID
+        from
+        <include refid="tableName"></include>
+        where
+        PARENT_ID = #{PARENT_ID}
+    </select>
+
+
+    <!-- 通过ID获取数据 -->
+    <select id="findById" parameterType="pd" resultType="pd">
+        select
+        <include refid="Field"></include>
+        from
+        <include refid="tableName"></include>
+        where
+        DICTIONARIES_ID = #{TEMPLATE_ID}
+    </select>
+
+    <update id="save" parameterType="pd">
+        update
+        <include refid="tableName"></include>
+        set EXTEND1 = #{FIELDLIST}
+        where DICTIONARIES_ID = #{TEMPLATE_ID}
+    </update>
+
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CallMsgkMapper">
+
+    <select id="findcallmsg" parameterType="pd" resultType="pd">
+        select hdhm as zjhm,DATE_FORMAT(kssj,'%Y-%m-%d %H:%i:%s') as kssj from tthjl where 1=1
+        <if test="zjhm != null and zjhm != ''">
+            AND hdhm=#{zjhm}
+        </if>
+        <if test="ucid != null and ucid != ''">
+            AND ucid=#{ucid}
+        </if>
+    </select>
+
+    <select id="findVipinfo" resultType="pd" parameterType="pd">
+        SELECT a.zjhm,c.name,c.position,DATE_FORMAT(a.kssj,'%Y-%m-%d %H:%i:%s') as kssj
+        FROM tthjl a LEFT JOIN t_ortherlink b ON a.zjhm=b.otel
+        LEFT JOIN t_vipinfo c ON b.vipid=c.id
+        where 1=1
+        <if test="zjhm != null and zjhm != ''">
+            AND a.zjhm=#{zjhm}
+        </if>
+        <if test="ucid != null and ucid != ''">
+            AND a.ucid=#{ucid}
+        </if>
+
+	</select>
+
+    <select id="findnum" resultType="pd" parameterType="pd">
+        SELECT COUNT(id) num FROM tthjl WHERE 1=1
+        <if test="zjhm != null and zjhm != ''">
+            and zjhm=#{zjhm}
+        </if>
+	</select>
+
+    <select id="findCustinfo" resultType="pd" parameterType="page">
+        SELECT a.zjhm,b.name,DATE_FORMAT(a.kssj,'%Y-%m-%d %H:%i:%s') as kssj
+        FROM tthjl a LEFT JOIN t_custom b ON FIND_IN_SET(a.zjhm,b.phone)
+        where 1=1
+        <if test="zjhm != null and zjhm != ''">
+            AND a.zjhm=#{zjhm}
+        </if>
+        <if test="ucid != null and ucid != ''">
+            AND a.ucid=#{ucid}
+        </if>
+    </select>
+</mapper>

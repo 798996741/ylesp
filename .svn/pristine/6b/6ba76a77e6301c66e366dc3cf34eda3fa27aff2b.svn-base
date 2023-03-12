@@ -1,0 +1,208 @@
+package com.yulun.controller.statistics;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.BlacklistManager;
+import com.yulun.service.DataAnalyzeManager;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+public class DataAnalyzeWeb  implements CommonIntefate {
+
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+    @Resource(name = "dataAnalyzeService")
+    private DataAnalyzeManager dataAnalyzeService;
+    @Resource(name="blacklistService")
+    private BlacklistManager blacklistService;
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object = new JSONObject();
+//        try {
+            PageData pd = new PageData();
+            Page page = new Page();
+            String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+            PageData pd_stoken = new PageData();
+            JSONObject json = data.getJSONObject("data");
+            pd_stoken.put("TOKENID", json.get("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                String zxid = pd_token.getString("ZXID");
+                if ("DataTraffic".equals(cmd)){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("zxid",json.getString("zxid"));
+                    pd.put("starttime",json.getString("starttime"));
+                    pd.put("endtime",json.getString("endtime"));
+                    page.setPd(pd);
+                    List<PageData> TrafficList = dataAnalyzeService.TrafficlistPage(page);
+                    List<PageData> TrafficTitle = dataAnalyzeService.TrafficTitle(pd);
+                    object.put("data",TrafficList);
+                    object.put("dataTitle",TrafficTitle);
+                    object.put("success", "true");
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                }else if ("DataRevrecord".equals(cmd)){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("zxid",json.getString("zxid"));
+                    pd.put("starttime",json.getString("starttime"));
+                    pd.put("endtime",json.getString("endtime"));
+                    page.setPd(pd);
+                    List<PageData> RevrecordList = dataAnalyzeService.RevrecordlistPage(page);
+                    List<PageData> RevrecordTitle = dataAnalyzeService.RevrecordTitle(pd);
+                    System.out.println("RevrecordTitle"+RevrecordTitle);
+                    object.put("data",RevrecordList);
+                    object.put("dataTitle",RevrecordTitle);
+                    object.put("success", "true");
+                }else if ("DataRecruit".equals(cmd)){
+                    pd.put("starttime",json.getString("starttime"));
+                    pd.put("endtime",json.getString("endtime"));
+                    List<PageData> recruitlist = dataAnalyzeService.xlrecruitlist(pd);
+                    List<PageData> sexrecruitlist = dataAnalyzeService.sexrecruitlist(pd);
+                    PageData agerecruitlist = dataAnalyzeService.agerecruitlist(pd);
+                    PageData totalrecruit = dataAnalyzeService.totalrecruit(pd);
+                    object.put("xldata",recruitlist);
+                    object.put("sexdata",sexrecruitlist);
+                    object.put("agedata",agerecruitlist);
+                    object.put("totaldata",totalrecruit);
+
+                    object.put("success", "true");
+                }else if ("DataMonthLine".equals(cmd)){
+                    PageData MonthCompanyLine = dataAnalyzeService.MonthCompanyLine(pd);
+                    PageData MonthPersonLine = dataAnalyzeService.MonthPersonLine(pd);
+                    object.put("CompanyLine",MonthCompanyLine);
+                    object.put("PersonLine",MonthPersonLine);
+                    object.put("success", "true");
+                }else if ("DataTrack".equals(cmd)){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("starttime",json.getString("starttime"));
+                    pd.put("endtime",json.getString("endtime"));
+                    pd.put("khpj",json.getString("khpj"));
+                    pd.put("khpjname",json.getString("khpjname"));
+                    page.setPd(pd);
+                    List<PageData> pageData = dataAnalyzeService.DataTrack(pd);
+                    List<PageData> list = dataAnalyzeService.TracklistPage(page);
+                    if(list.size()>0) {
+                        pd_token.put("param_code", "recordsvr");
+                        PageData pdparam = blacklistService.findSysparam(pd_token);
+
+                        for (PageData pdServerLog : list) {
+                            if (pdServerLog != null) {
+                                if (pdServerLog.get("lysj") != null && String.valueOf(pdServerLog.get("lysj")).length() > 10) {
+                                    pdServerLog.put("lysj", String.valueOf(pdServerLog.get("lysj")).substring(0, 19));
+                                }
+                                if (pdServerLog != null && pdServerLog.getString("lywj") != null) {
+                                    pdServerLog.put("lywjurl", pdparam.getString("param_value") + String.valueOf(pdServerLog.get("lysj")).substring(0, 10) + "/" + pdServerLog.getString("lywj"));
+                                }
+                            }
+                        }
+                    }
+                    object.put("data", list);
+                    object.put("DataTrac", pageData);
+                    object.put("success", "true");
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                }else if ("PersonServer".equals(cmd)){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("starttime",json.getString("starttime"));
+                    pd.put("endtime",json.getString("endtime"));
+                    pd.put("zxid",json.getString("zxid"));
+                    page.setPd(pd);
+                    List<PageData> list = dataAnalyzeService.PersonServerlistPage(page);
+                    object.put("data", list);
+                    object.put("success", "true");
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                }else if ("locallist".equals(cmd)){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("starttime",json.getString("starttime"));
+                    pd.put("endtime",json.getString("endtime"));
+                    pd.put("city",json.getString("city"));
+                    page.setPd(pd);
+                    List<PageData> list = dataAnalyzeService.LocallistPage(page);
+                    object.put("data", list);
+                    object.put("success", "true");
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                }else if ("holidaylist".equals(cmd)){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    page.setPd(pd);
+                    List<PageData> list = dataAnalyzeService.findholiday(page);
+                    object.put("data", list);
+                    object.put("success", "true");
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                }else if ("iuholiday".equals(cmd)){
+                    String id = json.getString("id");
+                    pd.put("type",json.getString("type"));
+                    pd.put("starttime",json.getString("starttime"));
+                    pd.put("endtime",json.getString("endtime"));
+                    pd.put("czdate",getTime());
+                    pd.put("czman",zxid);
+                    if (StringUtils.isNotEmpty(id)) {
+                        pd.put("id",id);
+                        dataAnalyzeService.updateholiday(pd);
+                    }else {
+                        pd.put("id",getUUID32());
+                        dataAnalyzeService.insertholiday(pd);
+                    }
+                    object.put("success", "true");
+                }else if ("deleteholiday".equals(cmd)){
+                    pd.put("id",json.getString("id"));
+                    dataAnalyzeService.deleteholiday(pd);
+                    object.put("success", "true");
+                }
+            } else {
+                object.put("success", "false");
+                object.put("msg", "登录超时，请重新登录");
+            }
+//        } catch (Exception e) {
+//            object.put("success", "false");
+//            object.put("msg", "异常");
+//        }
+        return object;
+    }
+
+    public String getUUID32() {
+        String uuid = UUID.randomUUID().toString();
+        uuid = uuid.replace("-", "");
+        return uuid;
+    }
+    public String getTime() {
+        Date date = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(date);
+    }
+}

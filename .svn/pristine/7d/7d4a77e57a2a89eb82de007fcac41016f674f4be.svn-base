@@ -1,0 +1,55 @@
+package com.yulun.controller.count;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-19 20:49
+ **/
+public class PersonCount implements CommonIntefate {
+    String SUCCESS = "success";
+    String MSG = "msg";
+    String FALSE = "false";
+    String TRUE = "true";
+    Integer pageIndex;
+    Integer pageSize;
+
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object = new JSONObject();
+        PageData pd = new PageData();
+        String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+        PageData pd_stoken = new PageData();
+        JSONObject json = data.getJSONObject("data");
+        pd_stoken.put("TOKENID", json.get("tokenid"));
+        try {
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (null == pd_token) {
+                json.put(SUCCESS, FALSE);
+                json.put(MSG, "请重新登陆");
+            }
+
+            if("personCount".equals(cmd)) {
+
+            }
+
+
+
+        } catch (Exception e) {
+            object.put(SUCCESS, FALSE);
+            object.put(MSG, "数据异常");
+
+        } finally {
+            return object;
+        }
+    }
+}

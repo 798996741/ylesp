@@ -1,0 +1,139 @@
+package com.yulun.service.impl;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.yulun.service.TrainrecoManager;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+@Service("trainrecoService")
+@Transactional
+public class TrainrecoService implements TrainrecoManager {
+    @Resource(name = "daoSupport")
+    private DaoSupport dao;
+
+    @Override
+    public void insertTrainreco(PageData pd) throws Exception {
+        dao.save("TespTrainrecoMapper.insertTrainreco", pd);
+    }
+
+    @Override
+    public void updateTrainreco(PageData pd) throws Exception {
+        dao.update("TespTrainrecoMapper.updateTrainreco",pd);
+    }
+
+    @Override
+    public void deleteTrainrecoById(PageData pd) throws Exception {
+        dao.delete("TespTrainrecoMapper.deleteTrainrecoById",pd);
+    }
+
+    @Override
+    public List<PageData> findTrainrecolistPage(Page page) throws Exception {
+        return (List<PageData>)dao.findForList("TespTrainrecoMapper.findTrainrecolistPage", page);
+    }
+
+    @Override
+    public List<PageData> finddetiallistPage(Page page) throws Exception {
+        return (List<PageData>)dao.findForList("TespTrainrecoMapper.finddetiallistPage", page);
+    }
+
+    @Override
+    public PageData findjzbtry(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.findjzbtry",pd);
+    }
+
+    @Override
+    public PageData findpoverty(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.findpoverty",pd);
+    }
+
+    @Override
+    public PageData findsbbtry(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.findsbbtry",pd);
+    }
+
+    @Override
+    public PageData findgraduate(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.findgraduate",pd);
+    }
+
+    @Override
+    public PageData findotherperson(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.findotherperson",pd);
+    }
+
+    @Override
+    public PageData findperson(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.findperson",pd);
+    }
+
+    @Override
+    public PageData findcompany(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.findcompany",pd);
+    }
+
+    @Override
+    public List<PageData> jobcaselistPage(Page pd) throws Exception {
+        return (List<PageData>) dao.findForObject("TespTrainrecoMapper.jobcaselistPage",pd);
+    }
+
+    @Override
+    public List<PageData> misscalllistPage(Page page) throws Exception {
+        return  (List<PageData>)dao.findForList("TespTrainrecoMapper.misscalllistPage", page);
+    }
+
+    @Override
+    public List<PageData> leavemsglistPage(Page page) throws Exception {
+        return (List<PageData>)dao.findForList("TespTrainrecoMapper.leavemsglistPage", page);
+    }
+
+    @Override
+    public List<PageData> JobReturnlistPage(Page page) throws Exception {
+        return (List<PageData>)dao.findForList("TespTrainrecoMapper.JobReturnlistPage", page);
+    }
+
+    @Override
+    public List<PageData> SignupCompanylistPage(Page page) throws Exception {
+        return (List<PageData>)dao.findForList("TespTrainrecoMapper.SignupCompanylistPage", page);
+    }
+
+    @Override
+    public List<PageData> SignupPersonlistPage(Page page) throws Exception {
+        return (List<PageData>)dao.findForList("TespTrainrecoMapper.SignupPersonlistPage", page);
+    }
+
+    @Override
+    public void insertjobreturn(PageData pd) throws Exception {
+        dao.save("TespTrainrecoMapper.insertjobreturn",pd);
+    }
+
+    @Override
+    public void updatejobreturn(PageData pd) throws Exception {
+        dao.update("TespTrainrecoMapper.updatejobreturn",pd);
+    }
+
+    @Override
+    public PageData getsignnum(PageData pd) throws Exception {
+        return (PageData) dao.findForObject("TespTrainrecoMapper.getsignnum",pd);
+    }
+
+    @Override
+    public List<PageData> exportsign(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("TespTrainrecoMapper.exportsign", pd);
+    }
+
+    @Override
+    public void insertsignup(PageData pd) throws Exception {
+        dao.save("TespTrainrecoMapper.insertsignup",pd);
+    }
+
+    @Override
+    public void updateisjobAll(PageData pd) throws Exception {
+        dao.update("TespTrainrecoMapper.updateisjobAll", pd);
+    }
+
+}

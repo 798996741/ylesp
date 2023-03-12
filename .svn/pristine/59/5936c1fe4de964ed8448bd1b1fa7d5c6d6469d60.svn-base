@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="personCountMapper">
+    <select id="jobregCount" parameterType="pd" resultType="pd">
+        SELECT SUM(`value`) AS joregCount FROM (
+        SELECT COUNT(uid) `value` FROM
+        (SELECT DISTINCT job.uid FROM (SELECT * FROM tesp_jobreg WHERE isvalid = 1
+<!--        <if test="endTime!=null and endTime!=''">-->
+<!--            and czdate &lt; #{endTime}-->
+<!--        </if>-->
+        ) AS job) AS result
+
+        ) AS result3
+    </select>
+
+    <select id="recruitCount" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) AS recruitCount  FROM (
+        SELECT tj.id FROM tesp_tj tj LEFT JOIN ylesp.tesp_jobreg p ON p.id = tj.uid  WHERE NOT p.id  IS NULL AND tj.istj = 1 and p.isvalid='1'
+<!--        <if test="startTime!=null and startTime!=''">-->
+<!--            and tj.czdate &gt; #{startTime}-->
+<!--        </if>-->
+<!--        <if test="endTime!=null and endTime!=''">-->
+<!--            and tj.czdate &lt; #{endTime}-->
+<!--        </if>-->
+        ) AS result
+    </select>
+
+    <select id="sexCountlistPage" resultType="pd" parameterType="page">
+        SELECT COUNT(DISTINCT b.uid) AS 'value',a.NAME AS 'name'
+        FROM sys_dictionaries a
+        LEFT JOIN(
+        SELECT ifnull(sex,3) sex,j.uid
+        FROM tesp_jobreg j
+        LEFT JOIN tesp_person p
+        ON p.uid = j.uid
+        WHERE 1 = 1 and j.isvalid='1'
+<!--        <if test="pd.startTime!=null and pd.startTime!=''">-->
+<!--            and j.czdate &gt; #{pd.startTime}-->
+<!--        </if>-->
+<!--        <if test="pd.endTime!=null and pd.endTime!=''">-->
+<!--            and j.czdate &lt; #{pd.endTime}-->
+<!--        </if>-->
+            )b ON a.ORDER_BY = b.sex
+        WHERE PARENT_ID = '3c4fec253c1b44828733516d4e61f727'
+        GROUP BY a.DICTIONARIES_ID
+    </select>
+
+    <select id="ageCountlistPage" resultType="pd" parameterType="page">
+        SELECT  CASE
+        WHEN (b.age &gt;= 16
+        AND b.age &lt;= 30)
+        THEN '16-30'
+        WHEN (b.age &gt; 31
+        AND b.age &lt;= 45)
+        THEN '31-45'
+        WHEN b.age &gt;46
+        AND b.age &lt;= 55
+        THEN '46-55'
+        WHEN b.age &gt;=56
+        then '55-99'
+        ELSE '未知'
+        END `name`,COUNT(DISTINCT b.uid) `value`  FROM(
+
+        SELECT p.uid,p.age FROM tesp_jobreg j LEFT JOIN tesp_person p ON j.uid = p.uid WHERE age IS NOT NULL and j.isvalid='1'
+        <!--        <if test="pd.startTime!=null and pd.startTime!=''">-->
+        <!--            and j.czdate &gt; #{pd.startTime}-->
+        <!--        </if>-->
+        <!--        <if test="pd.endTime!=null and pd.endTime!=''">-->
+        <!--            and j.czdate &lt; #{pd.endTime}-->
+        <!--        </if>-->
+
+        ) b GROUP BY  CASE WHEN (b.age &gt;= 16
+        AND b.age &lt;= 30)
+        THEN '16-30'
+        WHEN (b.age &gt;= 31
+        AND b.age &lt;= 45)
+        THEN '31-45'
+        WHEN b.age &gt;=46
+        AND b.age &lt;= 55
+        THEN '46-55'
+        WHEN b.age &gt;=56
+        then '55-99'
+        ELSE '未知'
+        END
+    </select>
+
+    <select id="xlCountlistPage" resultType="pd" parameterType="page">
+        SELECT
+        COUNT(DISTINCT b.uid) AS 'value',
+        a.NAME AS 'name'
+        FROM
+        sys_dictionaries a
+        LEFT JOIN(
+        SELECT
+        xl,p.uid
+        FROM
+        tesp_jobreg j
+        LEFT JOIN tesp_person p
+        ON p.uid = j.uid
+        WHERE 1 = 1
+<!--        <if test="pd.startTime!=null and pd.startTime!=''">-->
+<!--            and j.czdate &gt; #{pd.startTime}-->
+<!--        </if>-->
+<!--        <if test="pd.endTime!=null and pd.endTime!=''">-->
+<!--            and j.czdate &lt; #{pd.endTime}-->
+<!--        </if>-->
+
+        ) b
+        ON a.dictionaries_id = b.xl
+        WHERE PARENT_ID = '1068641a9ee64ea48d090cd99023f603'
+        GROUP BY a.DICTIONARIES_ID
+    </select>
+
+    <select id="jobCountlistPage" resultType="pd" parameterType="page">
+        SELECT j.gwflname AS `name`, COUNT(result.uid) AS `value`
+        FROM tesp_jobtype j
+        LEFT JOIN
+        (SELECT jt2.`gwflname`, jt2.code, jobreg.uid
+        FROM tesp_jobtype jt
+        LEFT JOIN tesp_jobtype jt2 ON jt.parent_code = jt2.code
+        LEFT JOIN tesp_jobreg jobreg ON jobreg.jobname = jt.code
+        WHERE 1 = 1
+<!--        <if test="pd.startTime!=null and pd.startTime!=''">-->
+<!--            and jobreg.czdate &gt; #{pd.startTime}-->
+<!--        </if>-->
+<!--        <if test="pd.endTime!=null and pd.endTime!=''">-->
+<!--            and jobreg.czdate &lt; #{pd.endTime}-->
+<!--        </if>-->
+        UNION all
+        SELECT jt2.`gwflname`, jt2.code, jobreg.puid
+        FROM tesp_jobtype jt
+        LEFT JOIN tesp_jobtype jt2 ON jt.parent_code = jt2.code
+        LEFT JOIN tesp_signup jobreg ON jobreg.jobname = jt.code
+        WHERE 1 = 1
+<!--        <if test="pd.startTime!=null and pd.startTime!=''">-->
+<!--            and jobreg.czdate &gt; #{pd.startTime}-->
+<!--        </if>-->
+<!--        <if test="pd.endTime!=null and pd.endTime!=''">-->
+<!--            and jobreg.czdate &lt; #{pd.endTime}-->
+<!--        </if>-->
+
+        ) result ON j.code = result.code
+        WHERE j.parent_code = 0
+        GROUP BY j.gwflname
+        ORDER BY `value` DESC
+        LIMIT 0,10
+    </select>
+
+    <select id="getDicName" resultType="pd" parameterType="String">
+        SELECT `name` FROM sys_dictionaries WHERE PARENT_ID=#{parentId}
+    </select>
+
+</mapper>
+
+
+

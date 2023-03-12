@@ -1,0 +1,137 @@
+package com.yulun.service.impl;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.yulun.service.JobReferManager;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.List;
+@Service("jobReferService")
+public class JobReferService implements JobReferManager {
+    @Resource(name = "daoSupport")
+    private DaoSupport dao;
+
+    @Override
+    public List<PageData> recruitlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.recruitlistPage", pd);
+    }
+
+    @Override
+    public List<PageData> getjoblistPage(Page pd) throws Exception {
+        return  (List<PageData>)dao.findForList("JobReferMapper.getjoblistPage", pd);
+    }
+
+    @Override
+    public List<PageData> getjob(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.getjob", pd);
+    }
+
+    @Override
+    public void insertperson(PageData pd) throws Exception {
+        dao.save("JobReferMapper.insertperson",pd);
+    }
+
+    @Override
+    public void updateperson(PageData pd) throws Exception {
+        dao.update("JobReferMapper.updateperson",pd);
+    }
+
+    @Override
+    public Integer deleteperson(PageData pd) throws Exception {
+         Integer delete = (Integer)dao.delete("JobReferMapper.deleteperson", pd);
+        return delete;
+    }
+
+    @Override
+    public List<PageData> findjoblistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.findjoblistPage", pd);
+    }
+
+    @Override
+    public void insertjobreg(PageData pd) throws Exception {
+        dao.save("JobReferMapper.insertjobreg",pd);
+    }
+
+    @Override
+    public void updatejobreg(PageData pd) throws Exception {
+        dao.update("JobReferMapper.updatejobreg",pd);
+    }
+
+    @Override
+    public void deletejobreg(PageData pd) throws Exception {
+        dao.delete("JobReferMapper.deletejobreg",pd);
+    }
+
+    @Override
+    public List<PageData> JobreferlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.JobreferlistPage", pd);
+    }
+
+    @Override
+    public List<PageData> PersonreferlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.PersonreferlistPage", pd);
+    }
+
+    @Override
+    public  List<PageData> findperson(PageData pd) throws Exception {
+        return ( List<PageData>)dao.findForList("JobReferMapper.findperson", pd);
+    }
+
+    @Override
+    public List<PageData> findaddrlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.findaddrlistPage", pd);
+    }
+
+    @Override
+    public List<PageData> findaddr(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.findaddr", pd);
+    }
+
+    @Override
+    public void insertaddr(PageData pd) throws Exception {
+        dao.save("JobReferMapper.insertaddr", pd);
+    }
+
+    @Override
+    public void updateaddr(PageData pd) throws Exception {
+        dao.update("JobReferMapper.updateaddr", pd);
+    }
+
+    @Override
+    public void deleteaddr(PageData pd) throws Exception {
+        dao.delete("JobReferMapper.deleteaddr", pd);
+    }
+
+    @Override
+    public List<PageData> getjobtype(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.getjobtype", pd);
+    }
+
+    @Override
+    public List<PageData> findpersonlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.findpersonlistPage", pd);
+    }
+
+    @Override
+    public void importdoc(PageData pd) throws Exception {
+        dao.save("JobReferMapper.importdoc", pd);
+    }
+
+    @Override
+    public void importdoctype(PageData pd) throws Exception {
+        dao.save("JobReferMapper.importdoctype", pd);
+    }
+
+    @Override
+    public List<PageData> jobreferDatalistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.jobreferDatalistPage", pd);
+    }
+
+    @Override
+    public List<PageData> personreferDatalistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("JobReferMapper.personreferDatalistPage", pd);
+    }
+
+}

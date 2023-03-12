@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="guideMapper">
+    <sql id="table">
+        tesp_ywyd
+    </sql>
+    <select id="findAlllistPage" resultType="pd"  parameterType="page">
+        SELECT
+        *
+        FROM
+        (
+        SELECT
+        ywyd.uid,
+        DATE_FORMAT(ywyd.czdate, "%Y-%m-%d %T") AS czdate,
+        ywyd.ywname,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = ywyd.ydqd) AS ydqdname,
+        ywyd.ydqd,
+        ywyd.isjd,
+        person.name,
+        --         ywyd.type,
+        person.cate as type,
+        ywyd.remark,
+        (SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = person.cate) AS typename
+        FROM
+        tesp_ywyd ywyd
+        INNER JOIN tesp_person person
+        ON ywyd.uid = person.uid
+        where 1=1
+        <if test="pd.type != null and pd.type != ''">
+            and person.cate = #{pd.type}
+        </if>
+
+        UNION
+
+
+        SELECT
+        ywyd.uid,
+        DATE_FORMAT(ywyd.czdate, "%Y-%m-%d %T") AS czdate,
+        ywyd.ywname,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = ywyd.ydqd) AS ydqdname,
+        ywyd.ydqd,
+        ywyd.isjd,
+        company.name,
+        --         ywyd.type,
+        ywyd.remark,
+        '1' AS type,
+        '公司' as typename
+        FROM
+        tesp_ywyd ywyd
+        INNER JOIN tesp_company company
+        ON ywyd.uid = company.uid
+        where 1=1
+        <if test="pd.type != null and pd.type != ''">
+            and '1' = #{pd.type}
+        </if>
+        ) AS result
+        WHERE 1 = 1
+
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and  result.czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and result.czdate &lt;  #{pd.endTime}
+        </if>
+        <if test="pd.ywname != null and pd.ywname != ''">
+            and result.ywname like CONCAT('%',#{pd.ywname},'%')
+        </if>
+        <if test="pd.name != null and pd.name != ''">
+            and result.name like CONCAT('%',#{pd.name},'%')
+        </if>
+        <if test="pd.ydqd != null and pd.ydqd != ''">
+            and result.ydqd = #{pd.ydqd}
+        </if>
+        <if test="pd.isjd != null and pd.isjd != ''">
+            and result.isjd = #{pd.isjd}
+        </if>
+
+        <if test="pd.uid != null and pd.uid != ''">
+            and result.uid = #{pd.uid}
+        </if>
+        <if test="pd.remark != null and pd.remark != ''">
+            and result.remark = #{pd.remark}
+         </if>
+        order by result.czdate desc
+    </select>
+
+    <select id="findByUidlistPage" resultType="pd"  parameterType="page">
+        SELECT ywyd.uid,DATE_FORMAT(ywyd.czdate,"%Y-%m-%d %T") AS czdate,ywyd.ywname,ywyd.isjd,ywyd.remark,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = ywyd.ydqd) AS ydqdname FROM tesp_ywyd ywyd WHERE 1=1
+        <if test="#{pd.uid != null and pd.uid != ''}">
+            and uid = #{pd.uid}
+        </if>
+        order by czdate desc
+    </select>
+
+    <select id="findSummarylistPage" resultType="pd"  parameterType="page">
+
+        SELECT * FROM (
+        SELECT uid,czdate,`type`,`name`,GROUP_CONCAT(ywname) ywname,GROUP_CONCAT(ydqdname) ydqdname,isjd,remark,COUNT(uid) AS fwCount
+        ,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = cate) AS `typename` FROM (SELECT
+        ywyd.uid,
+        DATE_FORMAT(ywyd.czdate, "%Y-%m-%d %T") AS czdate,
+        ywyd.ywname,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = ywyd.ydqd) AS ydqdname,
+        ywyd.ydqd,
+        ywyd.isjd,
+        person.name,
+        ywyd.type,
+        ywyd.remark,
+        person.cate
+        FROM
+        tesp_ywyd ywyd
+        INNER JOIN tesp_person person
+        ON ywyd.uid = person.uid ORDER BY ywyd.czdate DESC) r1 GROUP BY uid
+
+        UNION ALL
+
+        SELECT uid,czdate,`type`,`name`,GROUP_CONCAT(ywname) ywname,GROUP_CONCAT(ydqdname) ydqdname,isjd,remark,COUNT(uid) AS fwCount,
+        '企业' AS typename FROM (SELECT
+        ywyd.uid,
+        DATE_FORMAT(ywyd.czdate, "%Y-%m-%d %T") AS czdate,
+        ywyd.ywname,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = ywyd.ydqd) AS ydqdname,
+        ywyd.ydqd,
+        ywyd.isjd,
+        c.name,
+        ywyd.type,
+        ywyd.remark
+        FROM
+        tesp_ywyd ywyd
+        INNER JOIN tesp_company c
+        ON ywyd.uid = c.uid ORDER BY ywyd.czdate DESC) r1 GROUP BY uid
+        ) result WHERE 1 = 1
+
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and  czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt;  #{pd.endTime}
+        </if>
+        <if test="pd.ywname != null and pd.ywname != ''">
+            and ywname like CONCAT('%',#{pd.ywname},'%')
+        </if>
+        <if test="pd.name != null and pd.name != ''">
+            and name like CONCAT('%',#{pd.name},'%')
+        </if>
+        <if test="pd.ydqd != null and pd.ydqd != ''">
+            and ydqdname like CONCAT('%',#{pd.ydqd},'%')
+        </if>
+        <if test="pd.isjd != null and pd.isjd != ''">
+            and isjd = #{pd.isjd}
+        </if>
+        <if test="pd.type != null and pd.type != ''">
+            and type = #{pd.type}
+        </if>
+        <if test="pd.uid != null and pd.uid != ''">
+            and uid = #{pd.uid}
+        </if>
+        <if test="pd.remark != null and pd.remark != ''">
+            and remark = #{pd.remark}
+        </if>
+        order by czdate desc
+    </select>
+</mapper>
+
+
+

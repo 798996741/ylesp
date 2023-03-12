@@ -1,0 +1,60 @@
+package com.yulun.controller.consumer;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.DataStatManager;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+public class DataStatWeb implements CommonIntefate {
+
+    @Resource(name = "dataStatService")
+    private DataStatManager dataStatManager;
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object=new JSONObject();
+        try {
+            PageData pd = new PageData();
+            Page page = new Page();
+            String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+            PageData pd_stoken = new PageData();
+            JSONObject json = data.getJSONObject("data");
+            pd_stoken.put("TOKENID", json.get("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (cmd.equals("usertotal")) {
+                    List<PageData> list = dataStatManager.usertotal(pd);
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("servtotal")){
+                    List<PageData> list = dataStatManager.servtotal(pd);
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("getjob")){
+                    List<PageData> list = dataStatManager.getjob(pd);
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("getemploy")){
+                    List<PageData> list = dataStatManager.getemploy(pd);
+                    object.put("data",list);
+                    object.put("success","true");
+                }
+            } else {
+                object.put("success", "false");
+                object.put("msg", "登录超时，请重新登录");
+            }
+        }catch (Exception e) {
+        object.put("success", "false");
+        object.put("msg", "异常");
+    }
+        return object;
+    }
+}

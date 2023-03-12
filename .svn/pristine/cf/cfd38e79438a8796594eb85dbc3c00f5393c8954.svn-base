@@ -1,0 +1,259 @@
+package com.xxgl.service.impl;
+
+import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+
+import org.springframework.stereotype.Service;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.entity.system.Dictionaries;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ExetaskManager;
+import com.xxgl.service.mng.NaireManager;
+import com.xxgl.service.mng.NairetemplateManager;
+import com.xxgl.service.mng.TaskuserManager;
+import com.xxgl.utils.ResponseUtils;
+
+/** 
+ * 说明： 参数配置表
+ * 创建人：351412933
+ * 创建时间：2018-07-06
+ * @version
+ */
+@Service("taskuserService")
+public class TaskuserService implements TaskuserManager{
+
+	@Resource(name = "daoSupport")
+	private DaoSupport dao;
+	
+
+	@Resource(name="naireService")
+	private NaireManager naireService;
+	
+	@Resource(name="exetaskService")
+	private ExetaskManager exetaskService;
+
+	
+	@Resource(name="nairetemplateService")
+	private NairetemplateManager nairetemplateService;
+	
+	/**新增
+	 * @param pd
+	 * @throws Exception
+	 */
+	public void save(PageData pd)throws Exception{
+		dao.save("TaskuserMapper.save", pd);
+	}
+	
+	/**删除
+	 * @param pd
+	 * @throws Exception
+	 */
+	public void delete(PageData pd)throws Exception{
+		dao.delete("TaskuserMapper.delete", pd);
+	}
+	
+	/**修改
+	 * @param pd
+	 * @throws Exception
+	 */
+	public void edit(PageData pd)throws Exception{
+		dao.update("TaskuserMapper.edit", pd);
+	}
+	
+	public void editStateqd(PageData pd)throws Exception{
+		dao.update("TaskuserMapper.editStateqd", pd);
+	}
+	
+	public void editStateCom(PageData pd)throws Exception{
+		dao.update("TaskuserMapper.editStateCom", pd);
+	}
+	
+	
+	public void editTableName(PageData pd)throws Exception{
+		dao.update("TaskuserMapper.editTableName", pd);
+	}
+	
+	public void dropTable(PageData pd)throws Exception{
+		dao.update("TaskuserMapper.dropTable", pd);
+	}
+	
+	public void createNewTable(PageData pd)throws Exception{
+		dao.update("TaskuserMapper.createNewTable", pd);
+	}
+	/**列表
+	 * @param page
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public List<PageData> list(Page page)throws Exception{
+		return (List<PageData>)dao.findForList("TaskuserMapper.datalist", page);
+	}
+	
+	/**列表
+	 * @param page
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public List<PageData> listPage(Page page)throws Exception{
+		return (List<PageData>)dao.findForList("TaskuserMapper.datalistPage", page);
+	}
+	
+	/**列表(全部)
+	 * @param pd
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public List<PageData> listAll(PageData pd)throws Exception{
+		return (List<PageData>)dao.findForList("TaskuserMapper.listAll", pd);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<PageData> listAllGroupByField(PageData pd)throws Exception{
+		return (List<PageData>)dao.findForList("TaskuserMapper.listAllGroupByField", pd);
+	}
+	
+	/**通过id获取数据
+	 * @param pd
+	 * @throws Exception
+	 */
+	public PageData findById(PageData pd)throws Exception{
+		return (PageData)dao.findForObject("TaskuserMapper.findById", pd);
+	}
+	
+	/**通过id获取数据
+	 * @param pd
+	 * @throws Exception
+	 */
+	public PageData findByTablename(PageData pd)throws Exception{
+		return (PageData)dao.findForObject("TaskuserMapper.findByTablename", pd);
+	}
+	
+	
+	/**通过id获取数据
+	 * @param pd
+	 * @throws Exception
+	 */
+	public PageData findByCode(PageData pd)throws Exception{
+		return (PageData)dao.findForObject("TaskuserMapper.findByCode", pd);
+	}
+	
+	/**通过起始地址获取数据
+	 * @param pd
+	 * @throws Exception
+	 */
+	public PageData findByAddr(PageData pd)throws Exception{
+		return (PageData)dao.findForObject("TaskuserMapper.findByAddr", pd);
+	}
+	
+	/**批量删除
+	 * @param ArrayDATA_IDS
+	 * @throws Exception
+	 */
+	public void deleteAll(String[] ArrayDATA_IDS)throws Exception{
+		dao.delete("TaskuserMapper.deleteAll", ArrayDATA_IDS);
+	}
+
+	@Override
+	public PageData findByField(PageData pd) throws Exception {
+		// TODO Auto-generated method stub
+		return (PageData)dao.findForObject("TaskuserMapper.findByField", pd);
+	}
+
+	@Override
+	public void editFptype(PageData pd) throws Exception {
+		// TODO Auto-generated method stub
+		dao.update("TaskuserMapper.editFptype", pd);
+	}
+	
+	
+	/**
+	 * 获取题目信息及答题信息
+	 */
+	public Object getTmByNaire(PageData pd) throws Exception{
+		
+		PageData pd_new = new PageData();
+		
+		List<PageData>	varList =null;		
+		JSONObject object_new = new JSONObject();
+		PageData pd_task = new PageData();
+		pd_task=this.findById(pd);
+		String state="";
+		if(pd_task!=null){
+			state=pd_task.getString("STATE")==null?"":pd_task.getString("STATE");
+		}
+		if("1".equals(state)){
+			varList = naireService.listAll(pd);	 //所有获取题目列表
+			pd_new.put("ID", pd.getString("NAIRE_TEMPLATE_ID"));
+			PageData  pd_naire_template=nairetemplateService.findById(pd_new);
+			//List<PageData> answerList=naireService.listAllAnswer(pd); //已回答题目列表
+			String rownum=pd.getString("ROWNO")==null?"1":pd.getString("ROWNO");
+			int ROWNO=Integer.parseInt(rownum);
+			
+			//是否有下一题
+			PageData  pd_naire_next= new PageData();
+			String NEXT_ID="";
+			String ANSWER="";
+			if(pd.getString("ANSWER")!=null){
+				pd_naire_next=naireService.findByNextAnswer(pd);
+				if(pd_naire_next!=null){
+					NEXT_ID=pd_naire_next.getString("NEXT_ID");
+				}
+			}
+			if(ROWNO==1){
+				String kcb=pd_naire_template.getString("OPENINGREMARKS")==null?"":pd_naire_template.getString("OPENINGREMARKS");
+				object_new.put("kcb", kcb);
+			}
+			PageData  pd_naire=null;
+			String isjs="0";
+			PageData pd_answer_s = new PageData();
+			if((ROWNO-1)==varList.size()){  //最后一题
+				object_new.put("jsy", pd_naire_template.getString("CONCLUDINGREMARKS"));
+				isjs="1";
+			}
+			//PageData  pd_custom=null;
+			if((ROWNO-1)!=varList.size()){
+				if(NEXT_ID.equals("")){
+					pd_naire=varList.get(ROWNO-1);
+				}else{
+					PageData pd_next = new PageData();
+					PageData pd_naire_var = new PageData();
+					pd_next.put("ID",NEXT_ID);
+					//查找下一题的题目内容
+					pd_naire=naireService.findById(pd_next);
+					for(int i=0;i<varList.size();i++){
+						pd_naire_var=varList.get(i);
+						if(pd_naire_var!=null&&pd_naire!=null&&pd_naire.getString("ID").equals(pd_naire_var.getString("ID"))){
+							ROWNO=Integer.parseInt((String.valueOf(pd_naire_var.get("CODE"))));
+						}
+					}
+				}
+				object_new.put("naire", pd_naire);
+				//获取所有已回答的提交
+				pd.put("NEXT_ID", NEXT_ID);
+				pd.put("CUS_ID", pd.getString("uid"));
+				object_new.put("naireUse", naireService.listAll(pd));
+			}
+			object_new.put("isjs", isjs);
+		}else{
+			
+			pd.put("CUS_ID", pd.getString("uid"));
+			pd.put("allUse", "1");
+			object_new.put("naireUse", naireService.listAll(pd));
+		}
+		return object_new;
+	}
+
+	
+	
+}
+

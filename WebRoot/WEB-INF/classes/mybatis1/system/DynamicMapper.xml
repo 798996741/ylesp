@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DynamicMapper">
+	
+	<resultMap type="Dynamic" id="dynamicResultMap">
+		<id column="TEMPLATE_ID" property="ID"/>
+		<result column="NAME" property="NAME"/>
+		<result column="C_PHYSICSNAME" property="C_PHYSICSNAME"/>
+		<result column="PARENT_ID" property="PARENT_ID"/>
+	</resultMap>
+	
+	
+	<!--表名 -->
+	<sql id="tableName">
+		S_TEMPLATE
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		TEMPLATE_ID,
+		TYPE,
+		NAME,
+		C_PHYSICSNAME,
+		PARENT_ID,
+		CREATEMAN,
+		CREATEDATE
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{CREATEMAN},	
+		#{CREATEDATE},	
+		#{DYNAMIC_ID},
+		#{PARENT_ID},
+		#{NAME}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into ${C_PHYSICSNAME}
+		(
+			${columnStr}, CREATEMAN, CREATEDATE
+		) values (
+			${valueStr}, #{CREATEMAN}, now()
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+			${C_PHYSICSNAME}
+		where 
+			ID = #{ID}
+	</delete>
+	
+	
+	<!-- 删除人员信息 -->
+	<update id="deletePerson" parameterType="pd">
+		update ${C_PHYSICSNAME}
+		set 
+			IS_DEL=#{IS_DEL}
+		where 
+			ID = #{ID}
+	</update>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update ${C_PHYSICSNAME}
+		set 
+			${updateSql}
+		where 
+			ID = #{ID}
+	</update>
+
+	<!-- 修改 -->
+	<update id="editByPlanID" parameterType="pd">
+		update ${C_PHYSICSNAME}
+		set
+			${updateSql}
+		where
+			PLAN_ID = #{PLAN_ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+			ID, ${columnStr}
+		from 
+			${C_PHYSICSNAME}
+		where 
+			ID = #{ID}
+	</select>
+	
+	<!-- 通过TEMPLATE_ID获取字段名字符串和显示名字符串-->
+	<select id="findByTemId" parameterType="pd" resultType="pd">
+		select group_concat(a.c_fieldname) columnStr, group_concat(a.c_displaylabel) nameStr , group_concat(a.i_fieldtype) typeStr
+		, group_concat(CASE a.is_dic WHEN '是' THEN '1' ELSE '0' END) dicStr
+		, group_concat(CASE a.isqy WHEN '1' THEN '1' ELSE '0' END) searchStr 
+		from 
+			(select t.* 
+				from S_TCOLUMN t
+         		where t.TEMPLATE_ID = #{TEMPLATE_ID}
+         		and t.ISLIST = 1
+         		order by t.show_order asc
+         	) a
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select * from (
+			select
+				ID, ${pd.columnStr}, CREATEMAN, DATE_FORMAT(CREATEDATE, '%Y-%m-%d %H:%i:%s') CREATEDATE, (select name from s_template where c_physicsname = #{pd.C_PHYSICSNAME}) "C_PHYSICSNAME"
+			from 
+				${pd.C_PHYSICSNAME} tc
+			where 1=1
+			<if test="pd.P_ID != null and pd.P_ID != ''"><!-- 检索 -->
+				and PARENT_ID = #{pd.P_ID}
+			</if>
+			<if test="pd.IS_DEL != null and pd.IS_DEL != ''"><!-- 检索 -->
+				and IS_DEL = #{pd.IS_DEL}
+			</if>
+			<if test="pd.condition != null and pd.condition != ''"><!-- 检索 -->
+				${pd.condition}
+			</if>
+		) t
+		where 1=1 
+		<if test="pd.keywordsStr != null and pd.keywordsStr != ''"><!-- 关键词检索 -->
+			and
+				(
+					${pd.keywordsStr}
+				<!--	根据需求自己加检索条件
+					字段1 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					字段2 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') 
+				-->
+				)
+		</if>
+		
+		<if test="pd.searchStr != null and pd.searchStr != ''"><!-- 关键词检索 -->
+			and
+				(
+					${pd.searchStr}
+				)
+		</if>
+		<if test="pd.order == null or pd.keywordsStr == ''">
+			order by CREATEDATE desc
+		</if>
+		<if test="pd.order != null">
+			${pd.order}
+		</if>
+	</select>
+	
+	<!-- 通过ID获取其子级列表 -->
+	<select id="listByParentId" parameterType="String" resultMap="dynamicResultMap">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			PARENT_ID = #{parentId} and DISPLAY_TYPE = 1 order by TYPE asc
+	</select>
+
+	<!-- 通过ID查找表数据 -->
+	<select id="listById" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from
+		<include refid="tableName"></include>
+		where
+		TEMPLATE_ID = #{TEMPLATE_ID}
+	</select>
+	
+	<!-- 通过ID获取其子级列表 -->
+	<select id="listByParentId_child" parameterType="pd" resultMap="dynamicResultMap">
+		select 
+			ID, NAME, PARENT_ID, #{C_PHYSICSNAME} "C_PHYSICSNAME"
+		from 
+			${C_PHYSICSNAME}
+		where 
+			PARENT_ID = #{PARENT_ID} order by CREATEDATE DESC
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		<!-- select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include> -->
+		select
+			${columnStr}, CREATEMAN, DATE_FORMAT(CREATEDATE, '%Y-%m-%d %H:%i:%s') CREATEDATE
+		from 
+			${C_PHYSICSNAME}
+		where 1 = 1
+		<if test="RESOURCE_TYPE != null and RESOURCE_TYPE != ''">
+			and IS_DEL=0
+		</if>
+		<!-- where 1 = 1
+		<if test="condition != null and condition != ''">
+			and to_char(START_DATE, 'yyyy-mm-dd hh24:mi:ss') BETWEEN to_char(SYSDATE, 'yyyy-mm-dd hh24:mi:ss') AND ADD_MONTHS(to_char(SYSDATE, 'yyyy-mm-dd hh24:mi:ss'), +1)
+		</if> -->
+		<if test="searchStr != null and searchStr != ''"><!-- 关键词检索 -->
+			and
+				(
+					${searchStr}
+				)
+		</if>
+		
+	</select>
+	
+	
+	<!-- 列表 -->
+	<select id="datalist" parameterType="pd" resultType="pd">
+		select
+			to_char(CREATEDATE, 'yyyy-MM-dd HH24:mi:ss') CREATEDATE,t.*, #{C_PHYSICSNAME} C_PHYSICSNAME
+		from 
+			${C_PHYSICSNAME} t
+		where 1=1
+		<if test="condition != null and condition != ''"><!-- 检索 -->
+			${condition}
+		</if>
+	</select>
+	
+	<!-- 根据条件列表 -->
+	<select id="datalistByCondition" parameterType="pd" resultType="pd">
+		select
+			t.*, #{C_PHYSICSNAME} C_PHYSICSNAME
+		from 
+			${C_PHYSICSNAME} t
+		where 1 = 1
+		<if test="LEADER_ID != null and LEADER_ID != ''">
+			and ID = #{LEADER_ID}
+		</if>
+		<if test="TYPE != null and TYPE != ''">
+			and TYPE = #{TYPE}
+		</if>
+	</select>
+	
+	<!-- 去重 -->
+	<select id="checkRepeat" parameterType="pd" resultType="pd">
+		select
+			count(1) count
+		from 
+			${C_PHYSICSNAME}
+		where
+			NAME = #{NAME} and TEL = #{TEL} 
+	</select>
+	
+	<!-- 通过上级Code和level获取数据最大Code值 -->
+	<select id="findMaxCode" parameterType="pd" resultType="pd">
+		SELECT max(CODE) MaxCode FROM ${C_PHYSICSNAME} where CODE like CONCAT(#{CODE},'%') and I_LEVEL=#{I_LEVEL}
+	</select>
+	
+	<!-- 新增人员表时调用更新v_person2视图 -->
+	<select id="callUpdate">
+		call p_personview()
+	</select>
+
+	<!-- 物化视图刷新v_person -->
+	<select id="callRefreshMV">
+		call DBMS_MVIEW.REFRESH('V_PERSON')
+	</select>
+
+
+	<!-- 查找是引用系统字典或者引用数据字典 -->
+	<select id="findByTemplateId" parameterType="pd" resultType="pd">
+		select
+			t.*
+		from select ${C_PHYSICSNAME} t
+		where 1=1
+			and TEMPLATE_ID = #{TEMPLATE_ID}
+			<if test="I_TYPE != null and I_TYPE != ''">
+				and I_TYPE = #{I_TYPE}
+			</if>
+			<if test="DIC != null and DIC != ''"><!-- 查找是引用系统字典或者引用数据字典 -->
+				and (IS_DIC = '是' or IS_QUOTE = '是')
+			</if>
+	</select>
+	
+	<!-- 删除关联表数据-->
+	<delete id="deleteRelationData" parameterType="pd">
+		delete from
+			${C_PHYSICSNAME}
+		where 
+			RELATION_ID = #{RELATION_ID}
+	</delete>
+	
+	
+	
+	<!-- 收文列表 -->
+	<select id="recelistPage" parameterType="page" resultType="pd">
+		select ${pd.columns} from (
+			${pd.sql}
+		)
+	</select>
+	
+	<!-- 查询会议辅助表详情 -->
+	<select id="getMeetDetails" parameterType="pd" resultType="pd">
+		select * from ${C_PHYSICSNAME}
+		<where>
+			<if test="PLAN_ID != null and PLAN_ID != ''">
+				PLAN_ID = #{PLAN_ID}
+			</if>
+		</where>
+	</select>
+	
+	
+	
+	<!-- 新增-->
+	<insert id="savePerson" parameterType="pd" useGeneratedKeys="false">
+		 insert into  
+		 	${C_PHYSICSNAME} (${C_FIELDNAME}) 
+		 select ${c_fieldvalue} from  ${C_PHYSICSNAME} 
+		 where ID=#{ID}
+	</insert>
+	
+
+</mapper>

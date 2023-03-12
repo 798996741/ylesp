@@ -1,0 +1,167 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="policyMapper">
+
+    <!--查询字段-->
+    <sql id="zczxQuery">
+        a.`czdate`,
+        a.`zczxname`,
+        a.`zczxtype`,
+        a.`isjd`,
+        b.`name`,
+        b.`uid`,
+        a.`type`
+    </sql>
+
+    <sql id="table">
+        tesp_zczx
+    </sql>
+    <select id="findAlllistPage" resultType="pd"  parameterType="page">
+        SELECT * FROM (
+        SELECT zczx.uid AS zczxuid,company.uid AS uid,DATE_FORMAT(zczx.czdate,"%Y-%m-%d %T") AS czdate,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = zczx.zczxname) AS zczxname,zczx.zczxname AS zczx,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = zczx.zczxtype) AS zczxtypename,zczx.zczxtype,zczx.isjd,company.name,zczx.remark,zczx.fwcont, '1' AS `type`,'公司' as typename FROM tesp_zczx zczx INNER JOIN tesp_company company ON zczx.uid = company.uid
+        UNION
+        SELECT zczx.uid AS zczxuid,person.uid AS uid, DATE_FORMAT(zczx.czdate,"%Y-%m-%d %T") AS czdate,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = zczx.zczxname) AS zczxname,zczx.zczxname AS zczx,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = zczx.zczxtype) AS zczxtypename,zczx.zczxtype,zczx.isjd,person.name,zczx.remark,zczx.fwcont,person.cate as type,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = cate) AS `typename`  FROM tesp_zczx zczx INNER JOIN tesp_person person ON zczx.uid = person.uid
+        ) AS result WHERE 1 = 1
+
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and  result.czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and result.czdate &lt;  #{pd.endTime}
+        </if>
+        <if test="pd.zczxname != null and pd.zczxname != ''">
+            and result.zczxname = #{pd.zczxname}
+        </if>
+        <if test="pd.name != null and pd.name != ''">
+            and result.name like CONCAT('%',#{pd.name},'%')
+        </if>
+<!--         <if test="pd.zczxtype != null and pd.zczxtype != ''">-->
+<!--             and FIND_IN_SET(zczxtype,replace(<foreach collection="pd.zczxtype.split(',')" item="item" index="index" separator=',' open="'" close="'">${item}</foreach>,' ',''))-->
+<!--        </if>-->
+        <if test="pd.zczxtype != null and pd.zczxtype != ''">
+            and FIND_IN_SET(zczxtype,#{pd.zczxtype})
+        </if>
+        <if test="pd.isjd != null and pd.isjd != ''">
+                and result.isjd = #{pd.isjd}
+        </if>
+        <if test="pd.type != null and pd.type != ''">
+               and result.type = #{pd.type}
+        </if>
+        <if test="pd.uid != null and pd.uid != ''">
+            and result.uid = #{pd.uid}
+        </if>
+        order by result.czdate desc
+
+    </select>
+
+    <select id="findByUidlistPage" resultType="pd"  parameterType="page">
+
+        SELECT uid,DATE_FORMAT(czdate,"%Y-%m-%d %T") AS czdate,
+        (SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = zczx.zczxname) AS zczxname,
+               (SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = zczx.zczxtype) AS zczxtypename,isjd,fwcont,remark FROM <include
+            refid="table"/> zczx WHERE 1=1
+        <if test="#{pd.uid != null and pd.uid != ''}">
+            and uid = #{pd.uid}
+        </if>
+        order by czdate desc
+    </select>
+
+    <select id="findSummarylistPage" resultType="pd"  parameterType="page">
+        SELECT * FROM (
+        SELECT czdate,GROUP_CONCAT(zczxname) AS zczxname,GROUP_CONCAT(zczxtypename) AS zczxtypename,
+        GROUP_CONCAT(zczxtype) AS zczxtype,
+        COUNT(IF(zczxtypename ='政策推荐',zczxuid,NULL)) AS zctjCount,COUNT(zczxuid) AS zczxCount,
+        isjd,`name`,(SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = cate) AS `typename`,`type`,fwcont,remark
+        FROM(
+        SELECT
+        person.cate,
+        zczx.uid AS zczxuid,
+        person.uid AS uid,
+        DATE_FORMAT(zczx.czdate, "%Y-%m-%d %T") AS czdate,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = zczx.zczxname) AS zczxname,
+        zczx.zczxname AS zczx,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = zczx.zczxtype) AS zczxtypename,
+        zczx.zczxtype,
+        zczx.isjd,
+        person.name,
+        zczx.type,
+        zczx.remark,
+        zczx.fwcont
+        FROM
+        tesp_zczx zczx
+        INNER JOIN tesp_person person
+        ON zczx.uid = person.uid
+        ORDER BY czdate DESC
+        ) r1 GROUP BY uid
+        UNION ALL
+        SELECT czdate,GROUP_CONCAT(zczxname) AS zczxname,GROUP_CONCAT(zczxtypename) AS zczxtypename,
+        GROUP_CONCAT(zczxtype) AS zczxtype,
+        COUNT(IF(zczxtypename ='政策推荐',zczxuid,NULL)) AS zctjCount,COUNT(zczxuid) AS zczxCount,
+        isjd,`name`,`type`,fwcont,remark,'企业' AS `typename` FROM(
+        SELECT
+        zczx.uid AS zczxuid,
+        company.uid AS uid,
+        DATE_FORMAT(zczx.czdate, "%Y-%m-%d %T") AS czdate,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = zczx.zczxname) AS zczxname,
+        zczx.zczxname AS zczx,
+        (SELECT
+        `name`
+        FROM
+        sys_dictionaries
+        WHERE DICTIONARIES_ID = zczx.zczxtype) AS zczxtypename,
+        zczx.zczxtype,
+        zczx.isjd,
+        company.name,
+        zczx.type,
+        zczx.remark,
+        zczx.fwcont
+        FROM
+        tesp_zczx zczx
+        INNER JOIN tesp_company company
+        ON zczx.uid = company.uid
+        ORDER BY czdate DESC
+        ) r1 GROUP BY uid) result
+        WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and  result.czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and result.czdate &lt;  #{pd.endTime}
+        </if>
+        
+        <if test="pd.zczxname != null and pd.zczxname != ''">
+            and result.zczxname like concat('%',#{pd.zczxname},'%')
+        </if>
+        <if test="pd.name != null and pd.name != ''">
+            and result.name like CONCAT('%',#{pd.name},'%')
+        </if>
+        <if test="pd.zczxtype != null and pd.zczxtype != ''">
+          <foreach collection="pd.zczxtype.split(',')" item="item" index="index" separator=',' open="'" close="'">
+              and result.zczxtypename like CONCAT('%',${item},'%')
+          </foreach>
+        </if>
+        <if test="pd.isjd != null and pd.isjd != ''">
+            and result.isjd = #{pd.isjd}
+        </if>
+        <if test="pd.type != null and pd.type != ''">
+            and result.type = #{pd.type}
+        </if>
+        <if test="pd.uid != null and pd.uid != ''">
+            and result.uid = #{pd.uid}
+        </if>
+        order by result.czdate desc
+
+    </select>
+
+</mapper>

@@ -1,0 +1,36 @@
+package com.yulun.service.impl;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.yulun.service.EmPersonManager;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-13 17:11
+ **/
+
+@Service("emPersonService")
+public class EmPersonService implements EmPersonManager {
+    @Resource(name = "daoSupport")
+    private DaoSupport dao;
+    @Override
+    public List<PageData> findAlllistPage(Page page) throws Exception {
+        return (List<PageData>) dao.findForList("emPersonMapper.findAlllistPage",page);
+    }
+
+    @Override
+    public List<PageData> findAll(PageData page) throws Exception {
+        return (List<PageData>) dao.findForList("emPersonMapper.findAll",page);
+    }
+
+    @Override
+    public List<PageData> findEmCaseByUidlistPage(Page page) throws Exception {
+        return (List<PageData>) dao.findForList("emPersonMapper.findEmCaseByUidlistPage",page);
+    }
+
+}

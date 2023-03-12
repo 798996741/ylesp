@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TcolumnMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		S_TCOLUMN
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		TEMPLATE_ID,	
+		C_FIELDNAME,	
+		C_DISPLAYLABEL,	
+		I_FIELDTYPE,	
+		I_LEN,	
+		I_TYPE,	
+		TCOLUMN_ID,
+		I_DEFAULT,
+		I_DEC,
+		SHOW_ORDER,
+		IS_DIC,
+		DIC_TYPE,
+		IS_QUOTE,
+		QUOTE_TYPE,
+		ISNEW,
+		ISMUST,
+		ISQY,
+		ISLIST,
+		ISFLOW,
+		ISSELECT,
+		LAYOUT
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{TEMPLATE_ID},	
+		#{C_FIELDNAME},	
+		#{C_DISPLAYLABEL},	
+		#{I_FIELDTYPE},	
+		#{I_LEN},	
+		#{I_TYPE},	
+		#{TCOLUMN_ID},
+		#{I_DEFAULT},
+		#{I_DEC},
+		#{SHOW_ORDER,jdbcType=VARCHAR},
+		#{IS_DIC},
+		#{DIC_TYPE},
+		#{IS_QUOTE},
+		#{QUOTE_TYPE},
+		#{ISNEW,jdbcType=VARCHAR},
+		#{ISMUST,jdbcType=VARCHAR},
+		#{ISQY,jdbcType=VARCHAR},
+		#{ISLIST,jdbcType=VARCHAR},
+		#{ISFLOW,jdbcType=VARCHAR},
+		#{ISSELECT,jdbcType=VARCHAR},
+		#{LAYOUT,jdbcType=VARCHAR}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into
+		<include refid="tableName"></include>
+		(
+		<include refid="Field"></include>
+		) values (
+		<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			TCOLUMN_ID = #{TCOLUMN_ID}
+	</delete>
+	
+	<!-- 删除在界面上面被删除的字段-->
+	<delete id="deleteColumn" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			TEMPLATE_ID = #{TEMPLATE_ID}
+		<if test="columnStr != null and columnStr != ''">
+			and 
+				I_TYPE = 2
+			and 
+				C_FIELDNAME not in(${columnStr})
+		</if> 
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+			set 
+				I_LEN = #{I_LEN},	
+				I_TYPE = #{I_TYPE},
+				I_DEFAULT = #{I_DEFAULT},
+				I_DEC = #{I_DEC},
+				SHOW_ORDER = #{SHOW_ORDER,jdbcType=VARCHAR},
+				IS_DIC = #{IS_DIC},
+				DIC_TYPE = #{DIC_TYPE},
+				IS_QUOTE = #{IS_QUOTE},
+				ISNEW = #{ISNEW,jdbcType=VARCHAR},	
+				ISMUST = #{ISMUST,jdbcType=VARCHAR},
+				ISQY = #{ISQY,jdbcType=VARCHAR},
+				ISLIST = #{ISLIST,jdbcType=VARCHAR},
+				ISFLOW = #{ISFLOW,jdbcType=VARCHAR},
+				ISSELECT = #{ISSELECT,jdbcType=VARCHAR},
+				QUOTE_TYPE = #{QUOTE_TYPE},
+				LAYOUT = #{LAYOUT},
+			    TCOLUMN_ID = TCOLUMN_ID
+			where 
+				TCOLUMN_ID = #{TCOLUMN_ID}
+	</update>
+	
+	<!-- 创建表格/添加或删除表格中的列  -->
+	<select id="dynamicTable" parameterType="pd" resultType="pd">
+		${sql}
+	</select>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			TCOLUMN_ID = #{TCOLUMN_ID}
+	</select>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findByCondition" parameterType="pd" resultType="pd">
+		select 
+			count(1) COUNT
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+			and TEMPLATE_ID = #{TEMPLATE_ID}
+			and C_FIELDNAME = #{C_FIELDNAME}
+	</select>
+	
+	<!-- 删除在界面上面被删除的字段-->
+	<select id="findDeleteColumns" parameterType="pd" resultType="pd">
+		select 
+			<include refid="Field"></include>
+		from
+		<include refid="tableName"></include>
+		where 
+			TEMPLATE_ID = #{TEMPLATE_ID} 
+		and 
+			I_TYPE = 2
+		and 
+			C_FIELDNAME not in(${columnStr})
+	</select>
+	
+	<!-- 分页列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.I_TYPE != null and pd.I_TYPE != ''">
+			and I_TYPE = #{pd.I_TYPE}
+		</if>
+		<if test="pd.TEMPLATE_ID != null and pd.TEMPLATE_ID != ''">
+			and TEMPLATE_ID = #{pd.TEMPLATE_ID}
+		</if>
+		order by SHOW_ORDER asc
+	</select>
+	
+	<!-- 不分页列表 -->
+	<select id="datalist" parameterType="page" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.I_TYPE != null and pd.I_TYPE != ''">
+			and I_TYPE = #{pd.I_TYPE}
+		</if>
+		<if test="pd.TEMPLATE_ID != null and pd.TEMPLATE_ID != ''">
+			and TEMPLATE_ID = #{pd.TEMPLATE_ID}
+		</if>
+		order by SHOW_ORDER asc
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			TCOLUMN_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	<!-- 查找是引用系统字典或者引用数据字典 -->
+	<select id="findByTemplateId" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+			and TEMPLATE_ID = #{TEMPLATE_ID}
+			<if test="I_TYPE != null and I_TYPE != ''">
+				and I_TYPE = #{I_TYPE}
+			</if>
+			<if test="DIC != null and DIC != ''"><!-- 查找是引用系统字典或者引用数据字典 -->
+				and (IS_DIC = '是' or IS_QUOTE = '是')
+			</if>
+	</select>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findByTemplate" parameterType="pd" resultType="pd">
+		select 
+			<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+			and TEMPLATE_ID = #{TEMPLATE_ID}
+			and C_FIELDNAME = #{C_FIELDNAME}
+	</select>
+	
+	<select id="getTemplateColumns" parameterType="String" resultType="pd">
+		select *  from
+		<include refid="tableName"></include>
+		where 
+			TEMPLATE_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</select>
+
+	<select id="getTopicTmpColSet" parameterType="String" resultType="hashmap">
+			select
+				C_FIELDNAME,C_DISPLAYLABEL,I_FIELDTYPE,SHOW_ORDER,IS_DIC,DIC_TYPE,I_DEFAULT,ISNEW,ISQY,ISSELECT,ISMUST,ISFLOW,ISLIST
+			from <include refid="tableName"></include>t
+			where template_id=#{TEMPLATE_ID}
+			order by SHOW_ORDER
+	</select>
+
+	<select id="getTemplateColSet" parameterType="String" resultType="hashmap">
+		select
+		C_FIELDNAME,C_DISPLAYLABEL,I_FIELDTYPE,SHOW_ORDER,IS_DIC,DIC_TYPE,I_DEFAULT,ISNEW,ISQY,ISSELECT,ISMUST,ISFLOW,ISLIST
+		from <include refid="tableName"></include>t
+		where template_id=#{TEMPLATE_ID}
+		order by SHOW_ORDER
+	</select>
+
+	<select id="getColResult" parameterType="pd" resultType="pd">
+		select
+			t.TEMPLATE_ID, C_FIELDNAME, C_DISPLAYLABEL,I_FIELDTYPE,I_LEN,I_TYPE,TCOLUMN_ID,I_DEFAULT, I_DEC, SHOW_ORDER,IS_DIC,DIC_TYPE,IS_QUOTE,QUOTE_TYPE, ISNEW, ISMUST, ISQY, ISLIST,ISFLOW,ISSELECT
+		from
+		<include refid="tableName"></include> c inner join s_template t on  c.TEMPLATE_ID=t.TEMPLATE_ID
+		where 1=1
+		and C_PHYSICSNAME = #{C_PHYSICSNAME}
+		and C_FIELDNAME = #{C_FIELDNAME}
+	</select>
+
+</mapper>

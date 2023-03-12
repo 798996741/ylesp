@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataStatMapper">
+	<select id="usertotal" parameterType="pd" resultType="pd">
+		SELECT
+		(a.num+b.num+c.num+d.num+e.num+f.num) total,
+		f.num company,(a.num+b.num+c.num+d.num+e.num) person,
+		h.num employe,
+		i.num job
+		FROM
+		(SELECT COUNT(id) num FROM tesp_person) a
+		,(SELECT COUNT(id) num FROM tesp_graduate) b
+		,(SELECT COUNT(id) num FROM tesp_poverty) c
+		,(SELECT COUNT(id) num FROM tesp_sbbtry) d
+		,(SELECT COUNT(id) num FROM tesp_jzbtry) e
+		,(SELECT COUNT(id) num FROM tesp_company) f
+		,(SELECT COUNT(id) num FROM tesp_employreg) h
+		,(SELECT COUNT(id) num FROM tesp_jobreg) i
+	</select>
+
+	<select id="servtotal" resultType="pd" parameterType="pd">
+		SELECT (a.num+b.num+c.num+d.num+e.num) total,a.num employ,b.num job,c.num zczx,d.num ywyd,e.num qtfw
+		FROM
+		(SELECT COUNT(tesp_company.id) num FROM tesp_company,tesp_tj WHERE tesp_company.uid=tesp_tj.uid AND istj=1) a,
+		(SELECT COUNT(tesp_person.id) num FROM tesp_person,tesp_tj WHERE tesp_person.uid=tesp_tj.uid AND istj=1) b,
+		(SELECT COUNT(id) num FROM tesp_zczx) c,
+		(SELECT COUNT(id) num FROM tesp_ywyd) d,
+		(SELECT COUNT(id) num FROM tesp_qtfw) e
+	</select>
+
+	<select id="getjob" parameterType="pd" resultType="pd">
+		SELECT COUNT(a.id) as value,b.gwf AS name
+		FROM tesp_jobreg a
+		LEFT JOIN (SELECT a.*,b.gwflname AS gwf FROM tesp_jobtype a LEFT JOIN tesp_jobtype b ON a.parent_code=b.code WHERE b.gwflname IS NOT NULL) b ON
+		a.jobname=b.code WHERE b.gwf IS NOT NULL GROUP BY name LIMIT 0,10
+	</select>
+
+	<select id="getemploy" parameterType="pd" resultType="pd">
+		SELECT COUNT(a.id) as value,b.gwf AS name
+		FROM tesp_employreg a
+		LEFT JOIN (SELECT a.*,b.gwflname AS gwf FROM tesp_jobtype a LEFT JOIN tesp_jobtype b ON a.parent_code=b.code WHERE b.gwflname IS NOT NULL) b
+		ON a.jobname=b.code WHERE b.gwf IS NOT NULL GROUP BY name LIMIT 0,10
+	</select>
+
+	<select id="getskill" resultType="pd" parameterType="pd">
+		SELECT a.num AS zpfw,b.num AS jyfw,c.num AS hffw,d.num AS grzl,e.num AS qyzl,(d.num+e.num) AS yhzl FROM
+        (SELECT COUNT(b.id) num FROM tesp_jobreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1') a,
+        (SELECT COUNT(b.id) num FROM tesp_employreg a,tesp_tj b WHERE a.id=b.regid AND b.istj='1') b,
+        (SELECT COUNT(id) num FROM tesp_revrecord) c,
+        (SELECT COUNT(id) num FROM tesp_person) d,
+        (SELECT COUNT(id) num FROM tesp_company) e
+
+	</select>
+</mapper>

@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="NaireMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		T_NAIRE
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		ID,
+		NAIRE_TEMPLATE_ID,	
+		CODE,
+		TYPE,
+		SUBJECT,
+		ANSWER,
+		REMARK,	
+		CREATEMAN,
+		CREATEDATE
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{ID},
+		#{NAIRE_TEMPLATE_ID},	
+		#{CODE},
+		#{TYPE},
+		#{SUBJECT},
+		#{ANSWER},
+		#{REMARK},
+		#{CREATEMAN},
+		now()
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 新增-->
+	<insert id="saveNext" parameterType="pd">
+		insert into 
+		T_NAIRE_NEXT
+		(
+			ID,NAIRE_ID,ANSWER,NEXT_ID,CREATEDATE,CREATEMAN		
+		) values (
+			#{ID},#{NAIRE_ID},#{ANSWER},#{NEXT_ID},now(),#{CREATEMAN}	
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="deleteNext" parameterType="pd">
+		delete from
+		T_NAIRE_NEXT
+		where 
+			ID = #{ID}
+	</delete>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			ID = #{ID}
+	</delete>
+	
+	
+	<!-- 修改 -->
+	<update id="editNext" parameterType="pd">
+		update
+		T_NAIRE_NEXT
+		set 
+		NAIRE_ID=#{NAIRE_ID},	
+		ANSWER=#{ANSWER},
+		NEXT_ID=#{NEXT_ID},
+		CREATEMAN=#{CREATEMAN},
+		CREATEDATE=now()
+		where 
+			ID = #{ID}
+	</update>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+		set 
+		NAIRE_TEMPLATE_ID=#{NAIRE_TEMPLATE_ID},	
+		CODE=#{CODE},
+		TYPE=#{TYPE},
+		SUBJECT=#{SUBJECT},
+		ANSWER=#{ANSWER},
+		REMARK=#{REMARK},
+		CREATEMAN=#{CREATEMAN},
+		CREATEDATE=now()
+		where 
+			ID = #{ID}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		a.ID,
+		a.NAIRE_TEMPLATE_ID,	
+		a.CODE,
+		a.TYPE,
+		a.SUBJECT,
+		a.ANSWER,
+		a.REMARK,
+		a.CREATEMAN,
+		a.CREATEDATE,
+		d.NAME as TYPENAME
+		from  
+		<include refid="tableName"></include> a
+		left join SYS_DICTIONARIES d on a.TYPE=d.DICTIONARIES_ID
+		where 
+			a.ID = #{ID}
+	</select>
+	
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findByNextId" parameterType="pd" resultType="pd">
+		select 
+		a.id,
+		a.naire_template_id,
+		a.code,
+		a.type,
+		a.subject,
+		a.answer,
+		a.remark,
+		a.createman,
+		a.createdate,
+		d.NAME as typename,
+		b.answer as useranswer
+		from  
+		<include refid="tableName"></include> a
+		left join SYS_DICTIONARIES d on a.TYPE=d.DICTIONARIES_ID
+		left join t_answer b on b.naire_id=a.id
+		where 
+			a.ID = #{ID}
+	</select>
+	
+	
+	
+	<!-- 列表 -->
+	<select id="datalist" parameterType="page" resultType="pd">
+		select 
+		a.ID,
+		a.NAIRE_TEMPLATE_ID,	
+		a.CODE,
+		a.TYPE,
+		a.SUBJECT,
+		a.ANSWER,
+		a.REMARK,
+		a.CREATEMAN,
+		a.CREATEDATE,
+		d.NAME as TYPENAME
+		from  
+		<include refid="tableName"></include> a
+		left join SYS_DICTIONARIES d on a.TYPE=d.DICTIONARIES_ID
+		where 1=1
+		<if test="pd.NAIRE_TEMPLATE_ID!= null and pd.NAIRE_TEMPLATE_ID != ''"><!-- 关键词检索 -->
+			and NAIRE_TEMPLATE_ID = #{pd.NAIRE_TEMPLATE_ID}
+		</if>
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+				<!--	根据需求自己加检索条件
+					字段1 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					字段2 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') 
+				-->
+				
+				a.CODE LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				or a.TYPE LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				or a.SUBJECT LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				or a.ANSWER LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				or d.NAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		order by  CODE
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		(@i:=@i+1) as ROWNO,
+		a.id,
+		a.naire_template_id,
+		a.code,
+		a.type,
+		a.subject,
+		a.answer,
+		a.remark,
+		a.createman,
+		a.createdate,
+		d.NAME as typename,
+		b.answer as useranswer
+		from  
+		<include refid="tableName"></include> a
+		left join SYS_DICTIONARIES d on a.TYPE=d.DICTIONARIES_ID
+		left join t_answer b on b.naire_id=a.id
+		
+		,(SELECT @i:=0) t
+		where a.NAIRE_TEMPLATE_ID = #{NAIRE_TEMPLATE_ID}
+		<if test="NEXT_ID!= null and NEXT_ID != ''"><!-- 关键词检索 -->	
+			and  #{NEXT_ID}>CAST(a.CODE AS UNSIGNED INTEGER)
+		</if>
+		
+		<if test="NUM!= null and NUM != ''"><!-- 关键词检索 -->	
+			and  #{NUM}>=CODE
+		</if>
+		<if test="CUS_ID!= null and CUS_ID != ''"><!-- 关键词检索 -->	
+			and b.CUS_ID = #{CUS_ID}
+		</if>
+		<if test="allUse!= null and allUse != ''"><!-- 关键词检索 -->	
+			and b.answer is not null
+		</if>
+		${nextCodeStr}
+		ORDER BY CAST(a.CODE AS UNSIGNED INTEGER)
+	</select>
+	
+	
+	<!-- 列表(全部) -->
+	<select id="listStartAndEndConde" parameterType="pd" resultType="pd">
+		
+		select a.*,b.code as startcode,c.code as endcode  from t_naire_next a left join t_naire b on a.naire_id=b.id
+ 		left join t_naire c on a.next_id=c.id 
+		left join t_answer d on a.naire_id=d.naire_id 
+
+		where b.NAIRE_TEMPLATE_ID = #{NAIRE_TEMPLATE_ID}  and 
+		d.cus_id= #{CUS_ID} and a.answer=d.answer
+	</select>
+	
+	
+	<!-- 列表(全部) -->
+	<select id="listAllNext" parameterType="pd" resultType="pd">
+		select
+		a.ID,a.NAIRE_ID,a.ANSWER,a.NEXT_ID,b.SUBJECT,a.CREATEDATE,a.CREATEMAN	
+		from 
+		T_NAIRE_NEXT a left join T_NAIRE b on a.NEXT_ID=b.ID
+		where
+		NAIRE_ID=#{NAIRE_ID}
+	</select>
+	
+	<select id="listAllAnswer" parameterType="pd" resultType="pd">
+		select
+		a.ID,
+		a.NAIRE_ID,
+		a.ANSWER,
+		a.TABLENAME,
+		a.CUS_ID,
+		a.NUM,
+		b.SUBJECT,
+		b.ANSWER AS ALLANSWER,
+		d.NAME AS TYPENAME
+		from 
+		t_answer a left join T_NAIRE b
+		on a.NAIRE_ID=b.ID
+		left join SYS_DICTIONARIES d on b.TYPE=d.DICTIONARIES_ID
+		where 1=1
+		<if test="NAIRE_ID != null and NAIRE_ID != ''"><!-- 关键词检索 -->	
+			and NAIRE_ID = #{NAIRE_ID}
+		</if>
+		<if test="CUS_ID != null and CUS_ID != ''"><!-- 关键词检索 -->	
+			and CUS_ID = #{CUS_ID}
+		</if>
+		<if test="TABLENAME != null and TABLENAME != ''"><!-- 关键词检索 -->	
+			and TABLENAME = #{TABLENAME}
+		</if>
+		order by NUM
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+            #{item}
+		</foreach>
+	</delete>
+	
+	
+	<!-- 判断编号是否存在-->
+	<select id="findByCode" parameterType="pd" resultType="pd">
+	
+			select 
+			a.id,
+			a.naire_template_id,
+			a.code,
+			a.type,
+			a.subject,
+			a.answer,
+			a.remark,
+			a.createman,
+			a.createdate,
+			d.NAME as typename,
+			b.answer as useranswer
+			from  
+			<include refid="tableName"></include> a
+			left join SYS_DICTIONARIES d on a.TYPE=d.DICTIONARIES_ID
+			left join t_answer b on b.naire_id=a.id
+			where 1=1
+			
+		
+			<if test="NEXT_ID!= null and NEXT_ID != ''"><!-- 关键词检索 -->	
+				and  #{NEXT_ID}>CAST(a.CODE AS UNSIGNED INTEGER)
+			</if>
+			<if test="CUS_ID!= null and CUS_ID != ''"><!-- 关键词检索 -->	
+				and b.CUS_ID = #{CUS_ID}
+			</if>
+			<if test="allUse!= null and allUse != ''"><!-- 关键词检索 -->	
+				and b.answer is not null
+			</if>
+			<if test="CODE!= null and CODE != ''">
+				and CODE = #{CODE}
+			</if>	
+			<if test="ID!= null and ID != ''"><!-- 关键词检索 -->	
+				and a.ID != #{ID}
+			</if>
+			<if test="NAIRE_TEMPLATE_ID!= null and NAIRE_TEMPLATE_ID != ''"><!-- 关键词检索 -->	
+				and NAIRE_TEMPLATE_ID = #{NAIRE_TEMPLATE_ID}
+			</if>
+			
+			order by CODE desc	
+			limit 0,1
+	</select>
+	
+	<!-- 判断编号是否存在-->
+	<select id="findByNextAnswer" parameterType="pd" resultType="pd">
+		select 
+		ID,NAIRE_ID,ANSWER,NEXT_ID,CREATEDATE,CREATEMAN	
+		from (
+			select 
+			ID,NAIRE_ID,ANSWER,NEXT_ID,CREATEDATE,CREATEMAN	
+			from 
+			T_NAIRE_NEXT
+			where 1=1
+			<if test="ANSWER!= null and ANSWER != ''">
+				and ANSWER = #{ANSWER}
+			</if>	
+			<if test="ID!= null and ID != ''"><!-- 关键词检索 -->	
+				and ID != #{ID}
+				
+			</if>
+			<if test="NAIRE_ID!= null and NAIRE_ID != ''"><!-- 关键词检索 -->	
+				and NAIRE_ID = #{NAIRE_ID}
+			</if>
+		) t limit 0,1
+	</select>
+	
+	
+	
+	<!-- 下一题的信息-->
+	<select id="findByNext" parameterType="pd" resultType="pd">
+			select 
+			a.id,
+			a.naire_template_id,
+			a.code,
+			a.type,
+			a.subject,
+			a.answer,
+			a.remark,
+			a.createman,
+			a.createdate,
+			d.NAME as typename,
+			b.answer as useranswer
+			from  
+			<include refid="tableName"></include> a
+			left join SYS_DICTIONARIES d on a.TYPE=d.DICTIONARIES_ID
+			left join t_answer b on b.naire_id=a.id
+			where 1=1
+			<if test="CODE!= null and CODE != ''">
+				and CODE > #{CODE}
+			</if>	
+			<if test="CUS_ID!= null and CUS_ID != ''"><!-- 关键词检索 -->	
+				and b.CUS_ID = #{CUS_ID}
+			</if>
+			<if test="ID!= null and ID != ''"><!-- 关键词检索 -->	
+				and a.ID != #{ID}
+			</if>
+			<if test="NAIRE_TEMPLATE_ID!= null and NAIRE_TEMPLATE_ID != ''"><!-- 关键词检索 -->	
+				and NAIRE_TEMPLATE_ID = #{NAIRE_TEMPLATE_ID}
+			</if>
+			order by CODE	
+	</select>
+	
+	<!-- 351412933 -->
+</mapper>

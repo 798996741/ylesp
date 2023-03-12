@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="JobReferMapper">
+	<select id="recruitlistPage" parameterType="page" resultType="pd">
+		SELECT
+		a.id as cid,
+		a.jobname,
+		a.jobtype,
+		a.xl,
+		a.zyyq,
+		a.remark,
+		a.czman,
+		a.uid,
+		a.czdate,
+		a.zgrs,
+		a.sex,
+		a.agestart,
+		a.ageend,
+		a.gzdy,
+		a.gwyq,
+		a.xlyq,b.id as zid,b.name,b.qytype,b.addr,b.email,b.lxr,b.tel,b.lxtel,b.bylxr,b.bylxtel,
+		c.gwflname,
+		d.name AS jobtypename,
+		e.name AS xlyqname,
+		f.name AS sexname,
+		g.name AS gzdyname,
+		h.name as qytypename
+		FROM tesp_employreg a
+		LEFT JOIN tesp_company b ON a.uid=b.uid
+		LEFT JOIN tesp_jobtype c ON a.jobname=c.code
+		LEFT JOIN sys_dictionaries d ON a.jobtype=d.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries e ON a.xlyq=e.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries f ON a.sex=f.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries g ON a.gzdy=g.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries h ON b.qytype=h.DICTIONARIES_ID
+		WHERE 1=1
+		<if test="pd.name!=null and pd.name!=''">
+			and b.name=#{pd.name}
+		</if>
+		<if test="pd.jobname!=null and pd.jobname!=''">
+			and a.jobname=#{pd.jobname}
+		</if>
+		<if test="pd.jobtype!=null and pd.jobtype!=''">
+			and a.jobtype=#{pd.jobtype}
+		</if>
+		<if test="pd.gzdy!=null and pd.gzdy!=''">
+			and a.gzdy=#{pd.gzdy}
+		</if>
+		<if test="pd.keywords != null and pd.keywords != ''">
+			AND (
+			b.qytype LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.addr LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.email LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.lxr LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.tel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.lxtel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.bylxr LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			b.bylxtel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.jobname LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.jobtype LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.xl LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.zyyq LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.remark LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.zgrs LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.gzdy LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.gwyq LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+			a.xlyq LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			)
+		</if>
+	</select>
+
+	<select id="getjoblistPage" resultType="pd" parameterType="page">
+		SELECT
+		b.id as zid,
+		a.id as cid,
+		a.jobname,
+		a.jobtype,
+		a.qwxz,
+		a.jobaddr,
+		a.remark,
+		a.czman,
+		a.uid,
+		DATE_FORMAT(a.czdate,'%Y-%m-%d %H:%m:%s') czdate,
+		a.isvalid,b.sex,b.name,b.addr,b.email,b.tel,b.lxtel,b.age,b.jg,b.isjob,b.xl,b.zy,b.cardid,
+		c.gwflname,
+		d.name AS jobtypename,
+		e.name AS xlname,
+		f.name AS isjoname,
+		g.name AS qwxzname
+		FROM tesp_jobreg a
+		LEFT JOIN tesp_person b ON a.uid=b.uid
+		LEFT JOIN tesp_jobtype c ON a.jobname=c.code
+		LEFT JOIN sys_dictionaries d ON a.jobtype=d.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries e ON b.xl=e.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries f ON b.isjob=f.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries g ON a.qwxz=g.DICTIONARIES_ID
+		WHERE 1=1
+		<if test="pd.name!=null and pd.name!=''">
+			and b.name=#{pd.name}
+		</if>
+		<if test="pd.agestart!=null and pd.agestart!='' and pd.ageend!=null and pd.ageend!=''">
+			and b.age between #{pd.agestart} and #{pd.ageend}
+		</if>
+		<if test="pd.sex!=null and pd.sex!=''">
+			and b.sex=#{pd.sex}
+		</if>
+		<if test="pd.xl!=null and pd.xl!=''">
+			and b.xl=#{pd.xl}
+		</if>
+		<if test="pd.isjob!=null and pd.isjob!=''">
+			and b.isjob=#{pd.isjob}
+		</if>
+		<if test="pd.jobtype!=null and pd.jobtype!=''">
+			and a.jobtype=#{pd.jobtype}
+		</if>
+		<if test="pd.jobname!=null and pd.jobname!=''">
+			and a.jobname=#{pd.jobname}
+		</if>
+		<if test="pd.qwxz!=null and pd.qwxz!=''">
+			and a.qwxz=#{pd.qwxz}
+		</if>
+		order by a.id desc
+	</select>
+
+	<insert id="insertperson" parameterType="pd">
+		INSERT INTO tesp_person(
+			uid,
+			sex,
+			name,
+			addr,
+			email,
+			tel,
+			lxtel,
+			age,
+			jg,
+			czman,
+			czdate,
+			isjob,
+			xl,
+			zy,
+			cardid
+		)VALUES (
+			#{uid},
+			#{sex},
+			#{name},
+			#{addr},
+			#{email},
+			#{tel},
+			#{lxtel},
+			#{age},
+			#{jg},
+			#{czman},
+			#{czdate},
+			#{isjob},
+			#{xl},
+			#{zy},
+			#{cardid}
+		)
+	</insert>
+
+	<update id="updateperson" parameterType="pd">
+		UPDATE tesp_person
+		set
+		uid=#{uid},
+		sex=#{sex},
+		name=#{name},
+		addr=#{addr},
+		email=#{email},
+		tel=#{tel},
+		lxtel=#{lxtel},
+		age=#{age},
+		jg=#{jg},
+		czman=#{czman},
+		czdate=#{czdate},
+		isjob=#{isjob},
+		xl=#{xl},
+		zy=#{zy},
+		cardid=#{cardid}
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deleteperson" parameterType="pd">
+		DELETE FROM tesp_person WHERE id=#{id}
+	</delete>
+
+	<select id="findjoblistPage" resultType="pd" parameterType="page">
+		select
+		a.id,
+		a.jobname,
+		a.jobtype,
+		a.qwxz,
+		a.jobaddr,
+		a.remark,
+		a.czman,
+		a.uid,
+		DATE_FORMAT(a.czdate,'%Y-%m-%d %H:%m:%s') czdate,
+		a.isvalid,
+		b.gwflname,
+		c.name AS jobtypename,
+		d.name AS qwxzpename
+		from tesp_jobreg a
+		left join tesp_jobtype b on a.jobname=b.code
+		LEFT JOIN sys_dictionaries c ON a.jobtype=c.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries d ON a.qwxz=d.DICTIONARIES_ID
+		where 1=1
+		<if test="pd.uid!=null and pd.uid!=''">
+			and uid=#{pd.uid}
+		</if>
+		<if test="pd.id!=null and pd.id!=''">
+			and id=#{pd.id}
+		</if>
+	</select>
+
+	<insert id="insertjobreg" parameterType="pd">
+		INSERT INTO tesp_jobreg(
+			jobname,
+			jobtype,
+			qwxz,
+			jobaddr,
+			remark,
+			czman,
+			uid,
+			czdate,
+			isvalid
+		)VALUES (
+			#{jobname},
+			#{jobtype},
+			#{qwxz},
+			#{jobaddr},
+			#{remark},
+			#{czman},
+			#{uid},
+			#{czdate},
+			#{isvalid}
+		)
+	</insert>
+
+	<update id="updatejobreg" parameterType="pd">
+		UPDATE tesp_jobreg
+		set
+		jobname=#{jobname},
+		jobtype=#{jobtype},
+		qwxz=#{qwxz},
+		jobaddr=#{jobaddr},
+		remark=#{remark},
+		czman=#{czman},
+		uid=#{uid},
+		czdate=#{czdate},
+		isvalid=#{isvalid}
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deletejobreg" parameterType="pd">
+		DELETE FROM tesp_jobreg WHERE id=#{id}
+	</delete>
+
+	<select id="findperson" resultType="pd" parameterType="pd">
+		select
+		*
+		from tesp_person
+		where 1=1
+		<if test="uid!=null and uid!=''">
+			and uid=#{uid}
+		</if>
+		<if test="tel!=null and tel!=''">
+			and tel=#{tel}
+		</if>
+	</select>
+
+	<select id="PersonreferlistPage" parameterType="page" resultType="pd">
+		SELECT c.*,d.istj,
+		e.name AS jobtypename,
+		f.name AS xlname
+		FROM (SELECT a.sex,a.name,a.xl,a.zy,a.tel,a.age,b.jobname,
+			b.jobtype,
+			b.qwxz,
+			b.jobaddr,
+			b.remark,
+			b.czman,
+			b.uid,
+			DATE_FORMAT(b.czdate,'%Y-%m-%d %H:%m:%s') czdate,
+			b.isvalid FROM tesp_jobreg b right JOIN tesp_person a ON a.uid=b.uid) c
+		LEFT JOIN tesp_tj d ON c.uid=d.regid
+		LEFT JOIN sys_dictionaries e ON c.jobtype=e.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries f ON c.xl=f.DICTIONARIES_ID
+		WHERE d.uid=#{pd.uid}
+		AND d.istj='1'
+	</select>
+
+	<select id="JobreferlistPage" resultType="pd" parameterType="page">
+		SELECT c.*,
+		d.istj,
+		e.name AS jobtypename,
+		f.name AS zyyqname,
+		g.name as gzdyname,
+		h.name as xlyqname
+		FROM (SELECT a.name,a.lxr,a.addr,a.tel,b.id,b.jobname,
+		CONCAT(b.agestart,'-',b.ageend) age,
+		b.jobtype,
+		b.xl,
+		b.zyyq,
+		b.remark,
+		b.czman,
+		b.uid,
+		DATE_FORMAT(b.czdate,'%Y-%m-%d %H:%m:%s') czdate,
+		b.zgrs,
+		b.sex,
+		b.agestart,
+		b.ageend,
+		b.gzdy,
+		b.gwyq,
+		b.xlyq FROM tesp_employreg b LEFT JOIN tesp_company a ON a.uid=b.uid) c
+		LEFT JOIN tesp_tj d ON c.uid=d.regid
+		left join sys_dictionaries e ON c.jobtype=e.DICTIONARIES_ID
+		left join sys_dictionaries f ON c.zyyq=f.DICTIONARIES_ID
+		left join sys_dictionaries g ON c.gzdy=g.DICTIONARIES_ID
+		left join sys_dictionaries h ON c.xlyq=h.DICTIONARIES_ID
+		WHERE d.uid=#{pd.uid}
+		AND d.istj='1'
+	</select>
+
+	<select id="findaddrlistPage" parameterType="page" resultType="pd">
+		select * from tesp_addrlist where 1=1
+		<if test="pd.office!=null and pd.office!=''">
+			and office=#{pd.office}
+		</if>
+		<if test="pd.keywords != null and pd.keywords != ''">
+			AND (
+			name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			office LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			duty LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			tel1 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			tel2 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			)
+		</if>
+	</select>
+
+	<insert id="insertaddr" parameterType="pd">
+		INSERT INTO tesp_addrlist(
+			name,
+			office,
+			duty,
+			tel1,
+			tel2
+		)VALUES (
+			#{name},
+			#{office},
+			#{duty},
+			#{tel1},
+			#{tel2}
+		)
+	</insert>
+
+	<update id="updateaddr" parameterType="pd">
+		UPDATE tesp_addrlist
+		set
+		name=#{name},
+		office=#{office},
+		duty=#{duty},
+		tel1=#{tel1},
+		tel2=#{tel2}
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deleteaddr" parameterType="pd">
+		DELETE FROM tesp_addrlist WHERE id=#{id}
+	</delete>
+
+	<select id="getjobtype" resultType="pd" parameterType="pd">
+		select * from tesp_jobtype where 1=1
+		<if test="parent_code!=null and parent_code!=''" >
+			and parent_code=#{parent_code}
+		</if>
+	</select>
+
+</mapper>

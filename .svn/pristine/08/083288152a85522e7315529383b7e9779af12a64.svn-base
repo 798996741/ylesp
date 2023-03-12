@@ -1,0 +1,305 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="otherPersonMapper">
+    <sql id="Field">
+     `id`,
+	`uid`,
+	`name`,
+	DATE_FORMAT(czdate,"%Y-%m-%d %T") as `czdate`,
+	`sex`,
+	`cardid`,
+	`isjob`,
+	`tel`,
+	`cate`,
+	`isinsuran`,
+	`location`,
+    `xl`
+    </sql>
+    <sql id="saveField">
+        `czdate`,`uid`,`name`,sex,cardid,tel,lxtel,age,jg,cate,isjob,email,xl,zy,isimpot,isinsuran,location
+    </sql>
+    <sql id="SaveValue">
+        NOW(),
+        MD5(UUID()),
+        <choose>
+            <when test="name!=null and name!=''">#{name},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+
+        <choose>
+            <when test="sex!=null and sex!=''">#{sex},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="cardid!=null and cardid!=''">#{cardid},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="tel!=null and tel!=''">#{tel},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="lxtel!=null and lxtel!=''">#{lxtel},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+
+        <choose>
+            <when test="age!=null and age!=''">#{age},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="jg!=null and jg!=''">#{jg},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        (SELECT dictionaries_id
+        FROM sys_dictionaries
+        WHERE name_en = 'other'),
+        <choose>
+            <when test="isjob!=null and isjob!=''">#{isjob},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="email!=null and email!=''">#{email},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        (SELECT dictionaries_id
+        FROM sys_dictionaries
+        WHERE `name` = #{xl}),
+        <choose>
+            <when test="zy!=null and zy!=''">#{zy},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        '1'
+        <choose>
+            <when test="isinsuran!=null and isinsuran!=''">#{isinsuran},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="location!=null and location!=''">#{location},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+    </sql>
+    <sql id="table">
+        `tesp_person`
+    </sql>
+
+<!--    根据条件查询所有其他人员     -->
+    <select id="findAlllistPage" resultType="pd"  parameterType="page" >
+        SELECT final.* FROM (SELECT p.`id`,
+        <if test="pd.tables!= null and pd.tables!= ''">
+            p.ycstr,
+            p.ycstrs,
+            p.pcbh,
+        </if>
+        p.`uid`,
+        p.`name`,
+        p.`age`,
+        (SELECT `name` FROM sys_dictionaries WHERE name_en = "other") AS catename,
+        p.`jg`,
+        DATE_FORMAT(p.czdate,"%Y-%m-%d %T") AS `czdate`,
+        p.`sex`,
+        IF(p.sex = 1,'男','女') sexView,
+        IFNULL((SELECT re.result FROM tesp_revrecord re WHERE re.uid = p.uid ORDER BY re.cztime LIMIT 1),0) result,
+        IF((SELECT re.result FROM tesp_revrecord re WHERE re.uid = p.uid ORDER BY re.cztime LIMIT 1) = 1,'已回访','未回访') resultname,
+        p.`cardid`,
+        p.`isjob`,
+        p.`email`,
+        p.xl,
+        p.zy,
+        (SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = p.xl) AS xlname,
+        p.`tel`,
+        p.lxtel as lxtel,
+        p.isinsuran,
+        p.location,
+        p.`cate`
+        FROM
+        <if test="pd.tables!= null and pd.tables!= ''">
+            ${pd.tables} p
+        </if>
+        <if test="pd.tables== null or pd.tables== ''">
+            tesp_person p
+        </if>
+        WHERE (p.cate=(SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = "other") or p.cate='' or p.cate is null)
+        ) final WHERE 1 = 1
+        <if test="pd.uid!=null and pd.uid!=''">
+            AND  final.uid = #{pd.uid}
+        </if>
+        <if test="pd.pcbh!= null and pd.pcbh!= ''">
+            and final.pcbh =#{pd.pcbh}
+        </if>
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            AND  final.czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            AND final.czdate &lt;  #{pd.endTime}
+        </if>
+        <if test="pd.isjob != null and pd.isjob != ''">
+            AND final.isjob  = #{pd.isjob}
+        </if>
+        <if test="pd.name != null and pd.name != ''">
+            AND final.`name`  = #{pd.name}
+        </if>
+        <if test="pd.addr != null and pd.addr != ''">
+            AND final.`addr`  = #{pd.addr}
+        </if>
+         <if test="pd.result != null and pd.result != ''">
+            AND final.`result`  = #{pd.result}
+        </if>
+        <if test="pd.keywords != null and pd.keywords != ''">
+            AND
+            final.czdate LIKE CONCAT('%',#{pd.keywords},'%') or
+            final.name LIKE CONCAT('%',#{pd.keywords},'%') or
+            final.sexView LIKE CONCAT('%',#{pd.keywords},'%') or
+            final.tel LIKE CONCAT('%',#{pd.keywords},'%') or
+            final.isjob LIKE CONCAT('%',#{pd.keywords},'%') or
+            final.cardid LIKE CONCAT('%',#{pd.keywords},'%') or
+            final.resultname LIKE  CONCAT('%',#{pd.keywords},'%')
+        </if>
+
+        ORDER BY final.czdate DESC
+</select>
+
+<!--    根据ID或者UID查询-->
+    <select id="findByIdUid" resultType="pd"  parameterType="page" >
+        select <include refid="Field" /> from <include refid="table"/> where cate in (SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = "other")
+        <if test="id != null and id != ''">
+            and id = #{id}
+        </if>
+        <if test="uid != null and uid != ''">
+            and uid = #{uid}
+        </if>
+    </select>
+
+    <insert id="save" parameterType="pd">
+        insert into
+        <include refid="table"/>
+        (<include refid="saveField" />)
+        values (
+        <include refid="SaveValue" />)
+    </insert>
+
+    <select id="findbyId" resultType="pd"  parameterType="page" >
+        select * from  `tesp_person` where 1 = 1
+        <if test="id != null and id != ''">
+            and id = #{id}
+        </if>
+    </select>
+
+    <update id="update" parameterType="pd">
+        UPDATE
+            `tesp_person`
+        SET
+            `location` = #{location},
+            `isinsuran` = #{isinsuran},
+            `sex` = #{sex},
+            `name` = #{name},
+            `email` = #{email},
+            `lxtel` = #{lxtel},
+            `tel` = #{lxtel},
+            `age` = #{age},
+            `jg` = #{jg},
+            `isjob` = #{isjob},
+            `xl` = #{xl},
+            `zy` = #{zy},
+            `cardid` = #{cardid},
+            `cate` = #{cate}   where 1 = 1
+        <if test="uid != null and uid != ''">
+            and   `uid` = #{uid}
+        </if>
+    </update>
+
+    <select id="findXl"  parameterType="pd" resultType="pd">
+        select `dictionaries_id` from `sys_dictionaries` where  `name`  = #{xl}
+    </select>
+    <select id="findExist"  resultType="pd"  parameterType="page">
+        SELECT
+            *
+        FROM
+            `tesp_person`
+        WHERE 1 = 1
+          <if test="pd.name != null and pd.name != ''">
+              and   `name` = #{pd.name}
+          </if>
+          <if test="pd.tel != null and pd.tel != ''">
+            AND tel = #{pd.tel}
+        </if>
+          AND cate IN
+              (SELECT
+                   `dictionaries_id`
+               FROM
+                   sys_dictionaries
+               WHERE `NAME_EN` = "other" )
+    </select>
+
+    <insert id="batchSave" parameterType="java.util.List">
+        insert into
+            tesp_person
+        (
+        <include refid="saveField"></include>
+        ) values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            NOW(),
+            MD5(UUID()),
+            <choose>
+                <when test="item.name!=null and item.name!=''">#{item.name},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+
+            <choose>
+                <when test="item.sex!=null and item.sex!=''">#{item.sex},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            <choose>
+                <when test="item.cardid!=null and item.cardid!=''">#{item.cardid},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            <choose>
+                <when test="item.tel!=null and item.tel!=''">#{item.tel},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            <choose>
+                <when test="item.lxtel!=null and item.lxtel!=''">#{item.lxtel},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+
+            <choose>
+                <when test="item.age!=null and item.age!=''">#{item.age},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            <choose>
+                <when test="item.jg!=null and item.jg!=''">#{item.jg},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            (SELECT dictionaries_id
+            FROM sys_dictionaries
+            WHERE name_en = 'other'),
+            <choose>
+                <when test="item.isjob!=null and item.isjob!=''">#{item.isjob},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            <choose>
+                <when test="item.email!=null and item.email!=''">#{item.email},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            (SELECT dictionaries_id
+            FROM sys_dictionaries
+            WHERE `name` = #{item.xl}),
+            <choose>
+                <when test="item.zy!=null and item.zy!=''">#{item.zy},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            '1'
+            <choose>
+                <when test="item.isinsuran!=null and item.isinsuran!=''">#{item.isinsuran},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            <choose>
+                <when test="item.location!=null and item.location!=''">#{item.location},</when>
+                <otherwise>'暂无',</otherwise>
+            </choose>
+            )
+        </foreach>
+
+    </insert>
+</mapper>

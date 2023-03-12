@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="signupMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		tesp_signup
+	</sql>
+
+	<select id="findAlllistPage" parameterType="Page" resultType="pd">
+		SELECT *
+		FROM (
+		SELECT s.uid,DATE_FORMAT(s.czdate, "%Y-%m-%d %T") AS czdate, person.name AS pname, person.sex
+		, person.tel, s.signupjob, s.isjob
+		, (
+		SELECT `name`
+		FROM sys_dictionaries
+		WHERE person.xl = dictionaries_id
+		) AS xlname, person.xl, comp.name AS cname
+		, DATE_FORMAT((
+		SELECT r.cztime
+		FROM tesp_revrecord r
+		WHERE r.uid = s.cuid
+		ORDER BY cztime DESC
+		LIMIT 1
+		), "%Y-%m-%d %T") AS rcztime
+		, (
+		SELECT r.czman
+		FROM tesp_revrecord r
+		WHERE r.uid = s.cuid
+		ORDER BY cztime DESC
+		LIMIT 0, 1
+		) AS rczman
+		, (
+		SELECT r.remark
+		FROM tesp_revrecord r
+		WHERE r.uid = s.cuid
+		ORDER BY cztime DESC
+		LIMIT 0, 1
+		) AS remark
+		FROM tesp_signup s
+		LEFT JOIN tesp_company comp ON s.cuid = comp.uid
+		LEFT JOIN tesp_person person ON person.uid = s.puid
+		) result
+		WHERE result.rcztime IS NOT NULL
+		<if test="pd.startTime!=null and pd.startTime!=''">
+			and  result.czdate &gt; #{pd.startTime}
+		</if>
+		<if test="pd.endTime!=null and pd.endTime!=''">
+			and result.czdate &lt;  #{pd.endTime}
+		</if>
+		<if test="pd.name != null and pd.name != ''">
+			and result.pname like CONCAT('%',#{pd.name},'%')
+		</if>
+		<if test="pd.isjob != null and pd.isjob != ''">
+			and result.isjob = #{pd.isjob}
+		</if>
+		order by rcztime desc
+	</select>
+
+</mapper>

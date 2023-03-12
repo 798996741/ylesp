@@ -1,0 +1,67 @@
+package com.yulun.service;
+
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+
+import java.util.List;
+
+public interface ConsumerManager {
+    public List<PageData> findgraduatelistPage(Page page)throws Exception;
+    public List<PageData> findgraduate(PageData page)throws Exception;
+    public void insertgraduate(PageData pd) throws Exception;
+    public void updategraduate(PageData pd) throws Exception;
+    public void deletegraduate(PageData pd) throws Exception;
+
+    public List<PageData> findpovertylistPage(Page page)throws Exception;
+    public List<PageData> findpoverty(PageData pd)throws Exception;
+    public void insertpoverty(PageData pd) throws Exception;
+    public void updatepoverty(PageData pd) throws Exception;
+    public void deletepoverty(PageData pd) throws Exception;
+
+    public List<PageData> findsbbtrylistPage(Page page)throws Exception;
+    public List<PageData> findsbbtry(PageData pd)throws Exception;
+    public void insertsbbtry(PageData pd) throws Exception;
+    public void updatesbbtry(PageData pd) throws Exception;
+    public void deletesbbtry(PageData pd) throws Exception;
+
+    public List<PageData> findjzbtrylistPage(Page page)throws Exception;
+    public List<PageData> findjzbtry(PageData page)throws Exception;
+    public void insertjzbtry(PageData pd) throws Exception;
+    public void updatejzbtry(PageData pd) throws Exception;
+    public void deletejzbtry(PageData pd) throws Exception;
+
+    public List<PageData> findcompanylistPage(Page page)throws Exception;
+    public List<PageData> findcomreglistPage(Page page)throws Exception;
+    public List<PageData> findcompany(PageData page)throws Exception;
+    public void insertcompany(PageData pd) throws Exception;
+    public void updatecompany(PageData pd) throws Exception;
+    public void deletecompany(PageData pd) throws Exception;
+
+    public List<PageData> findemployreglistPage(Page page)throws Exception;
+    public List<PageData> findemployreg(PageData pd)throws Exception;
+    public void insertemployreg(PageData pd) throws Exception;
+    public void updateemployreg(PageData pd) throws Exception;
+    public void deleteemployreg(PageData pd) throws Exception;
+
+    public List<PageData> getcompanytoday(PageData page)throws Exception;
+    public List<PageData> getpersontoday(PageData page)throws Exception;
+    public List<PageData> getcalltoday(PageData page)throws Exception;
+    public PageData getDIC(PageData page)throws Exception;
+    public List<PageData> getDicAll(PageData page)throws Exception;
+    public PageData getjobtype(PageData page)throws Exception;
+
+    public void savePerson(PageData pd) throws Exception;
+    public void savegraduate(PageData pd) throws Exception;
+
+
+    //aliar
+    public void updateBatchByCardid(List<PageData> list) throws  Exception;
+    public void updateBatchByTelAndName(List<PageData> list) throws  Exception;
+    public void saveBatch(List<PageData> list) throws  Exception;
+
+    public   List<PageData> findExportList(Page page) throws  Exception;
+
+    public  List<PageData> findgraduateExport(Page page) throws Exception;
+
+    void batchSaveGrad(List<PageData> saveList) throws Exception;
+}

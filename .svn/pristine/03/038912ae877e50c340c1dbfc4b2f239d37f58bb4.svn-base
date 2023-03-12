@@ -1,0 +1,110 @@
+package com.yulun.controller.trainreco;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.RevrecordManager;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+public class RevrecordWeb implements CommonIntefate {
+
+    @Resource(name = "revrecordService")
+    private RevrecordManager revrecordManager;
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object = new JSONObject();
+//        try {
+            PageData pd = new PageData();
+            Page page = new Page();
+            String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+            PageData pd_stoken = new PageData();
+            JSONObject json = data.getJSONObject("data");
+            pd_stoken.put("TOKENID", json.get("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (cmd.equals("revrecordlist")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("cate", json.get("cate"));
+                    pd.put("starttime", json.get("starttime"));
+                    pd.put("endtime", json.get("endtime"));
+                    pd.put("keywords", json.get("keywords"));
+                    pd.put("uid", json.get("uid"));
+                    page.setPd(pd);
+                    List<PageData> list = revrecordManager.findrevrecordlistPage(page);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                }else if (cmd.equals("insertrevrecord")){
+                    pd.put("kssj", json.getString("kssj"));
+                    pd.put("zjhm", json.getString("zjhm"));
+                    pd.put("zxid", json.getString("zxid"));
+                    pd.put("isjt", json.getString("isjt"));
+                    pd.put("remark", json.getString("remark"));
+                    pd.put("ucid", json.getString("ucid"));
+                    pd.put("tasktype", json.getString("tasktype"));
+                    pd.put("uid", json.getString("uid"));
+                    pd.put("result", json.getString("result"));
+                    pd.put("cztime", json.getString("cztime"));
+                    pd.put("czman", json.getString("czman"));
+                    pd.put("cate", json.getString("cate"));
+                    pd.put("name", json.getString("name"));
+                    revrecordManager.insertRevrecord(pd);
+                    object.put("success", "true");
+                }else if (cmd.equals("updaterevrecord")){
+                    pd.put("id", json.getString("id"));
+                    pd.put("kssj", json.getString("kssj"));
+                    pd.put("zjhm", json.getString("zjhm"));
+                    pd.put("zxid", json.getString("zxid"));
+                    pd.put("isjt", json.getString("isjt"));
+                    pd.put("remark", json.getString("remark"));
+                    pd.put("ucid", json.getString("ucid"));
+                    pd.put("tasktype", json.getString("tasktype"));
+                    pd.put("uid", json.getString("uid"));
+                    pd.put("result", json.getString("result"));
+                    pd.put("cztime", json.getString("cztime"));
+                    pd.put("czman", json.getString("czman"));
+                    pd.put("cate", json.getString("cate"));
+                    pd.put("name", json.getString("name"));
+                    revrecordManager.updateRevrecord(pd);
+                    object.put("success", "true");
+                }else if (cmd.equals("recordlist")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("starttime", json.get("starttime"));
+                    pd.put("endtime", json.get("endtime"));
+                    pd.put("type", json.get("type"));
+                    pd.put("keywords", json.get("keywords"));
+                    page.setPd(pd);
+                    List<PageData> list = revrecordManager.tesprecordlistPage(page);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                    object.put("data", list);
+                    object.put("success", "true");
+                }
+            }else {
+                object.put("success", "false");
+                object.put("msg", "登录超时，请重新登录");
+            }
+//        }catch (Exception e) {
+//            object.put("success", "false");
+//            object.put("msg", "异常");
+//        }
+        return object;
+    }
+}

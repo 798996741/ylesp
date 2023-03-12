@@ -1,0 +1,10 @@
+package com.yulun.utils.excel;
+
+import sun.text.bidi.BidiBase;
+
+public class Contents {
+    public static final String DOWNLOAD_FILENAME = "error";
+    public static String errorDownLoad;
+    public static String[] errorCoumns;
+    public static BidiBase importInfoVoColumns;
+}

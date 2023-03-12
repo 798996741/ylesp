@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="App-Config" content="fullscreen=yes,useHistoryState=yes,transition=yes" />
+    <meta content="yes" name="apple-mobile-web-app-capable" />
+    <meta content="yes" name="apple-touch-fullscreen" />
+    <meta content="telephone=no,email=no" name="format-detection" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/mui.picker.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/mui.poppicker.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="css/common.css" />
+
+</head>
+
+<body>
+    <div>
+        <div class="form-block-blue">请选择需重新处理部门</div>
+        <div class="form-item">
+            <label class="form-label">
+                <span class="color-red">| </span>处理部门</label>
+            <div class="form-content form-date">
+                <div id='showeduPicker' class="selectPicker">请选择处理部门
+                    <div class="down-icon"></div>
+                </div>
+            </div>
+        </div>
+        <div class="form-block-blue">请输入不通过原因</div>
+        <textarea autocomplete="off" placeholder="请输入内容" class="form-input__inner"
+            style="min-height: 54px; height: 54px;"></textarea>
+        <div class="bottom-submit-big">
+            提交
+        </div>
+    </div>
+
+    <script src="js/mui.min.js"></script>
+    <script src="js/mui.picker.min.js"></script>
+    <script src="js/mui.poppicker.js"></script>
+    <script>
+        (function ($) {
+            $.init();
+            var btns = $('.btn');
+            var dateResult = document.getElementById('dateResult');
+            btns.each(function (i, btn) {
+                btn.addEventListener('tap', function () {
+                    var _self = this;
+                    if (_self.picker) {
+                        _self.picker.show(function (rs) {
+                            console.log(rs.text);
+                            dateResult.innerText = rs.text;
+                            _self.picker.dispose();
+                            _self.picker = null;
+                        });
+                    } else {
+                        var optionsJson = this.getAttribute('data-options') || '{}';
+                        var options = JSON.parse(optionsJson);
+                        _self.picker = new $.DtPicker(options);
+                        _self.picker.show(function (rs) {
+                            dateResult.innerText = rs.text;
+                            _self.picker.dispose();
+                            _self.picker = null;
+                        });
+                    }
+
+                }, false);
+            });
+            var _getParam = function (obj, param) {
+                return obj[param] || '';
+            };
+            // 学历
+            var eduPicker = new $.PopPicker();
+            eduPicker.setData([{
+                value: '1',
+                text: '博士'
+            }, {
+                value: '2',
+                text: '硕士'
+            }, {
+                value: '3',
+                text: '本科'
+            }, {
+                value: '4',
+                text: '大专'
+            }, {
+                value: '5',
+                text: '中专'
+            }, {
+                value: '6',
+                text: '其他'
+            }]);
+            var showeduPickerButton = document.getElementById('showeduPicker');
+            showeduPickerButton.addEventListener('tap', function (event) {
+                eduPicker.show(function (items) {
+                    console.log(items[0])
+                    showeduPickerButton.innerText = _getParam(items[0], 'text');
+                    //返回 false 可以阻止选择框的关闭
+                    //return false;
+                });
+            }, false);
+
+        })(mui);
+    </script>
+</body>
+
+</html>

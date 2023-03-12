@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ExetaskMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="field">
+		id,
+		template_id,	
+		type,
+		taskname,
+		completedate,
+		state,	
+		taskman,
+		createman,
+		createdate
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="fieldvalue">
+		#{id},
+		#{template_id},	
+		#{type},
+		#{taskname},
+		to_date(#{completedate},'yyyy-mm-dd'),
+		#{state},
+		#{taskman},
+		#{createman},
+		now()
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parametertype="pd" usegeneratedkeys="false">
+		
+		 <![cdata[ 
+		   insert into ${tablename}(${linecolumn}) 
+		   select result.* from( 
+		   ]]> 
+		    select  
+		    ${linevalues}
+		   	from dual) 
+		   
+		    <!--<foreach collection="linelist" item="item" index="index" separator="union all" > 
+		    select  
+		    <foreach collection="item" index="key" item="_value" separator=","> 
+		      #{_value} 
+		    </foreach>  
+		   	from dual) 
+		   </foreach>  -->
+		    
+		   <![cdata[ result]]>   
+		
+	</insert>
+	
+	<insert id="saveanswer" parametertype="pd">
+	insert into 
+		t_answer(
+		id,naire_id,answer,tablename,cus_id,num,answerdate
+		) values (
+		#{id},#{naire_id},#{answer},#{tablename},#{cus_id},#{num},now()
+		)
+	
+	</insert>
+	<update id="editanswer" parametertype="pd">
+		update
+			t_answer
+		set 
+			answer=#{answer},	
+			answerdate=now()
+		where 
+			naire_id = #{naire_id}
+		and	
+			cus_id=#{cus_id}
+	</update>
+	
+	<!-- 通过id获取数据 -->
+	<select id="findbyanswer" parametertype="pd" resulttype="pd">
+		select id,answer from  t_answer 
+		where  
+			naire_id = #{naire_id} 
+		and 
+			cus_id=#{cus_id}
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findbyfield" parametertype="pd" resulttype="pd">
+		select * from  ${tablename} where  ${selectstr}
+	</select>
+	
+	<!-- 删除-->
+	<delete id="delete" parametertype="pd">
+		delete from
+			${tablename} 
+		where 
+			id = #{id}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parametertype="pd">
+		update
+			${tablename} 
+		set 
+		fpman=#{fpman},	
+		zxman=#{zxman}
+		where 
+			id = #{id}
+	</update>
+	
+	
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findbyid" parametertype="pd" resulttype="pd">
+		${tablestr} 
+	</select>
+	
+	
+	
+	<!-- 列表 -->
+	<select id="datalist" parametertype="page" resulttype="pd">
+		select * from  ${tablename} where 1=1
+		
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+				<!--	根据需求自己加检索条件
+					字段1 like concat(concat('%', #{pd.keywords}),'%')
+					 or 
+					字段2 like concat(concat('%', #{pd.keywords}),'%') 
+				-->
+				)
+		</if>
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listall" parametertype="pd" resulttype="pd">
+		select
+		${field},b.zxxm 
+		from 
+		${tablename} a
+		left join tzxlb b on a.zxman=b.id
+		where 1=1
+		
+		<if test="zxman!= null and zxman != ''"><!-- 关键词检索 -->
+			and zxman = #{zxman}
+		</if>
+		order by id 
+	</select>
+	
+	<select id="listallisfp" parametertype="pd" resulttype="pd">
+		select
+		${field} 
+		from 
+		${tablename} a
+		where 1=1 
+		and zxman is not null
+		<if test="hfwj!= null and hfwj != ''"><!-- 关键词检索 -->
+			and hfwj = #{hfwj}
+		</if>
+		<if test="zxman!= null and zxman != ''"><!-- 关键词检索 -->
+			and zxman = #{zxman}
+		</if>
+	</select>
+	
+	
+	
+	<!-- 列表(全部) -->
+	<select id="listcustom" parametertype="pd" resulttype="pd">
+		select
+		a.*,b.zxxm,b.zt
+		from 
+		${tablename}  a
+		left join tzxlb b on a.zxman=b.id
+		<if test="zxman!= null and zxman != ''"><!-- 关键词检索 -->
+			and zxman = #{zxman}
+		</if>
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteall" parametertype="string">
+		delete from
+		<include refid="tablename"></include>
+		where 
+			id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+            #{item}
+		</foreach>
+	</delete>
+	
+	
+	
+	<!-- 351412933 -->
+</mapper>

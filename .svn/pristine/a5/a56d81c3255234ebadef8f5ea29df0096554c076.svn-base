@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="App-Config" content="fullscreen=yes,useHistoryState=yes,transition=yes" />
+    <meta content="yes" name="apple-mobile-web-app-capable" />
+    <meta content="yes" name="apple-touch-fullscreen" />
+    <meta content="telephone=no,email=no" name="format-detection" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/mui.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/mui.picker.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/mui.poppicker.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="css/common.css" />
+</head>
+
+<body>
+    <div>
+        <form>
+            <div class="form-block">请输入附件名称</div>
+            <div>
+                <input type="text" autocomplete="off" class="form-input__inner">
+            </div>
+            <div class="clearfix">
+                <div class="select-file">
+                    选择文件
+                </div>
+            </div>
+        </form>
+        <div class="bottom-back-big">
+            返回上一页
+        </div>
+    </div>
+</body>
+
+</html>

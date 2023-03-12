@@ -1,0 +1,276 @@
+package com.yulun.controller.task;
+
+import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import jxl.Workbook;
+import jxl.format.Colour;
+import jxl.format.UnderlineStyle;
+import jxl.write.Label;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableFont;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.shiro.crypto.hash.SimpleHash;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import net.sf.json.JSONArray;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.controller.base.BaseController;
+import com.fh.entity.Page;
+import com.fh.entity.system.Dictionaries;
+import com.fh.service.system.appuser.AppuserManager;
+import com.fh.service.system.dictionaries.DictionariesManager;
+import com.fh.util.Jurisdiction;
+import com.fh.util.ObjectExcelView;
+import com.fh.util.PageData;
+import com.fh.util.Tools;
+import com.fh.util.UuidUtil;
+import com.yulun.service.ConsultManager;
+import com.xxgl.service.mng.ExetaskManager;
+import com.xxgl.service.mng.NaireManager;
+import com.xxgl.service.mng.TaskcustomManager;
+import com.xxgl.service.mng.TaskuserManager;
+import com.xxgl.service.mng.TemplateManager;
+import com.xxgl.service.mng.ZxlbManager;
+import com.xxgl.service.system.DynamicManager;
+import com.xxgl.service.system.TcolumnManager;
+import com.xxgl.service.system.TemplatesManager;
+import com.xxgl.utils.ExcelReader;
+import com.yulun.controller.api.CommonIntefate;
+
+/**
+ * 说明：问卷调查接口
+ * 创建人：huangjianling-351412933
+ * 创建时间：2020-11-18
+ */
+@Controller
+@RequestMapping(value="/appTask")
+public class TaskWeb  extends BaseController  implements CommonIntefate  {
+
+
+	@Resource(name="zxlbService")
+	private ZxlbManager zxlbService;
+
+	@Resource(name="consultService")
+	private ConsultManager consultService;
+	
+	@Resource(name="taskuserService")
+	private TaskuserManager taskuserService;
+
+	
+	@Resource(name="dictionariesService")
+	private DictionariesManager dictionariesService;
+	
+	@Resource(name="exetaskService")
+	private ExetaskManager exetaskService;
+	
+	@Resource(name="taskcustomService")
+	private TaskcustomManager taskcustomService;
+	
+	@Override
+	public JSONObject execute(JSONObject data, HttpServletRequest request)
+			throws Exception {
+		JSONObject object=new JSONObject();
+		try{
+			PageData pd = new PageData();
+			String cmd = data.getString("cmd")==null?"":data.getString("cmd");
+			PageData pd_stoken=new PageData();
+			JSONObject json = data.getJSONObject("data");
+			pd_stoken.put("TOKENID", json.get("tokenid"));
+			PageData pd_token=zxlbService.findByTokenId(pd_stoken);
+			if(pd_token!=null){
+				if(cmd.equals("list")){  //根据提交的方法执行相应的操作，获取知识库分页信息 
+					Page page = new Page();
+			        Integer pageIndex;
+			        Integer pageSize;
+			        
+			        pageIndex = json.getInteger("pageIndex");
+		            page.setCurrentPage(pageIndex);
+		            pageSize = json.getInteger("pageSize");
+		            page.setShowCount(pageSize);
+			        String state=json.getString("state")==null?"":json.getString("state");
+					String taskname = json.getString("taskname")==null?"":json.getString("taskname");
+					String iscur = json.getString("iscur")==null?"1":json.getString("iscur");
+					
+					pd.put("STATE", state);	//模板ID
+					pd.put("keywords", taskname);
+					pd.put("ISCUR", iscur);
+					page.setPd(pd);
+					page.setShowCount(10);
+					List<PageData> list = taskuserService.listPage(page);	//列出Dynamic列表
+					if(list.size()>0){
+						object.put("success","true");
+						object.put("data",list);
+						object.put("pageId",pageIndex);
+						object.put("pageCount",page.getTotalPage());
+						object.put("recordCount",page.getTotalResult());
+					}else{
+						object.put("success","false");
+				        object.put("msg","暂无数据");
+					}
+			
+					
+				}else if(cmd.equals("getTmByNaire")) {
+					//获取题目信息
+					String uid=json.getString("uid")==null?"":json.getString("uid");
+					String naire_template_id = json.getString("naire_template_id")==null?"":json.getString("naire_template_id");
+					String naire_id = json.getString("naire_id")==null?"":json.getString("naire_id");
+					String id = json.getString("id")==null?"":json.getString("id");
+					String code = json.getString("code")==null?"":json.getString("code");
+					String answer = json.getString("answer")==null?"":json.getString("answer");
+					pd.put("uid", uid);	//模板ID
+					
+					pd.put("ID", id);
+					pd.put("ANSWER", answer);
+					pd.put("NAIRE_TEMPLATE_ID", naire_template_id);
+					pd.put("NAIRE_ID", naire_id);
+					pd.put("NUM", code);
+					
+					PageData pd_task=taskuserService.findById(pd);
+					PageData pd_answer=new PageData();
+					String state="";
+					if(pd_task!=null){
+						state=pd_task.getString("STATE")==null?"":pd_task.getString("STATE");
+					}
+					
+					pd.put("CUS_ID", uid);	//用户信息
+					
+					if(state.equals("1")&&answer!=null&!answer.equals("")){
+						pd_answer = exetaskService.findByAnswer(pd);	//根据ID读取
+						if(pd_answer==null){
+							pd.put("id", this.get32UUID());	//主键
+							exetaskService.saveAnswer(pd);
+						}else{
+							exetaskService.editAnswer(pd);
+						}
+						object.put("success","true");
+					}
+					
+					Object list = taskuserService.getTmByNaire(pd,state);	
+					
+					object.put("success","true");
+					object.put("data",list);
+			       
+				}else if(cmd.equals("saveAnswer")) {
+					String uid=json.getString("uid")==null?"":json.getString("uid");
+					String num = json.getString("code")==null?"":json.getString("code");
+					String naire_template_id = json.getString("naire_template_id")==null?"":json.getString("naire_template_id");
+					String naire_id = json.getString("naire_id")==null?"":json.getString("naire_id");
+					String answer = json.getString("answer")==null?"":json.getString("answer");
+					
+					pd.put("CUS_ID", uid);	//模板ID
+					pd.put("NUM", num);
+					pd.put("NAIRE_TEMPLATE_ID", naire_template_id);
+					pd.put("NAIRE_ID", naire_id);
+					pd.put("ANSWER", answer);
+					PageData pd_task=taskuserService.findById(pd);
+					PageData pd_answer=new PageData();
+					String state="";
+					if(pd_task!=null){
+						state=pd_task.getString("state")==null?"":pd_task.getString("state");
+					}
+					if(state.equals("1")){
+						pd_answer = exetaskService.findByAnswer(pd);	//根据ID读取
+						if(pd_answer==null){
+							pd.put("id", this.get32UUID());	//主键
+							exetaskService.saveAnswer(pd);
+						}else{
+							exetaskService.editAnswer(pd);
+						}
+						object.put("success","true");
+					}else{
+						object.put("success","false");
+						object.put("msg","保存失败，任务未在执行中");
+					}
+					
+				}else if(cmd.equals("saveResult")) {
+					
+					
+						
+					pd.put("ZXMAN", pd_token.getString("ID"));
+					pd.put("CUS_ID", json.getString("uid"));
+					pd.put("TASKID", json.getString("taskid"));
+					pd.put("CREATEMAN", pd_token.getString("ID"));
+					pd.put("HFRESULT",json.getString("hfresult"));
+					pd.put("HFWJ",json.getString("hfwj"));
+					pd.put("HFREMARK",json.getString("hfremark"));
+					
+					PageData pdhf=taskcustomService.findByTaskIdAndCusId(pd);
+					if(pdhf!=null){
+						taskcustomService.editHF(pd);
+					}else{
+						taskcustomService.saveHF(pd);
+					}
+					object.put("success","true");
+				}else if(cmd.equals("loadNaire")) {
+					
+					//获取题目信息
+					String uid=json.getString("uid")==null?"":json.getString("uid");
+					String naire_template_id = json.getString("naire_template_id")==null?"":json.getString("naire_template_id");
+					//任务id
+					String id = json.getString("id")==null?"":json.getString("id");
+					pd.put("uid", uid);	//模板ID
+					pd.put("CUS_ID", json.getString("uid"));
+					pd.put("ID", id);
+					pd.put("NAIRE_TEMPLATE_ID", naire_template_id);
+					pd.put("action", "search");
+					PageData pd_task=taskuserService.findById(pd);
+					String state="";
+					if(pd_task!=null){
+						state=pd_task.getString("STATE")==null?"":pd_task.getString("STATE");
+					}
+					if(uid==""){
+						object.put("success","false");
+				        object.put("msg","参数不全");
+					}else{
+						Object list = taskuserService.getTmByNaire(pd,"2");	
+						object.put("success","true");
+						object.put("data",list);
+					}
+					
+				}else{
+					object.put("success","false");
+			        object.put("msg","访问异常");
+				}
+			}else{
+				object.put("success","false");
+				object.put("msg","登录超时，请重新登录");
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+			object.put("success","false");
+			object.put("msg","操作异常");
+		}	
+        return object;
+	}
+	
+	
+	
+	
+	
+}
+

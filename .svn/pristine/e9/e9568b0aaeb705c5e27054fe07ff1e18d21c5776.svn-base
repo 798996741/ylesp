@@ -1,0 +1,55 @@
+package com.yulun.service.impl;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.yulun.service.TrainInfoManager;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-08 10:39
+ **/
+
+@Service("trainInfoService")
+@Transactional
+public class TrainInfoService implements TrainInfoManager {
+    @Resource(name = "daoSupport")
+    private DaoSupport dao;
+
+    @Override
+    public List<PageData> findAlllistPage(Page page) throws Exception {
+        return (List<PageData>) dao.findForList("trainInfoMapper.findAlllistPage",page);
+    }
+
+    @Override
+    public void deleteById(PageData pageData) throws Exception {
+        dao.delete("trainInfoMapper.deleteById",pageData);
+
+    }
+
+    @Override
+    public List<PageData> findById(PageData pageData) throws Exception {
+        return (List<PageData>) dao.findForList("trainInfoMapper.findbyId",pageData);
+    }
+
+    @Override
+    public List<PageData> findExit(PageData pageData) throws Exception {
+        return (List<PageData>) dao.findForList("trainInfoMapper.findExit",pageData);
+    }
+
+    @Override
+    public Object save(List<PageData> list) throws Exception {
+        return dao.batchSave("trainInfoMapper.save", list);
+    }
+
+    @Override
+    public Object update(PageData pd) throws Exception {
+        return dao.update("trainInfoMapper.update",pd);
+    }
+
+}

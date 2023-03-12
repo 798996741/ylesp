@@ -1,0 +1,26 @@
+package com.yulun.service.impl;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.yulun.service.OuterCallTaskManager;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+@Service("outerCallTaskService")
+public class OuterCallTaskService implements OuterCallTaskManager {
+    @Resource(name = "daoSupport")
+    private DaoSupport dao;
+
+    @Override
+    public List<PageData> findAllDictionariesPage(PageData pd) throws Exception {
+        return (List<PageData>) dao.findForList("outerCallTaskService.findAllDictionariesPage",pd);
+    }
+
+    @Override
+    public List<PageData> listPage(Page page) throws Exception {
+        return (List<PageData>) dao.findForList("outerCallTaskService.listPage",page);
+    }
+}

@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataAnalyzeMapper">
+<!--	话务统计-->
+    <select id="TrafficTitle" resultType="pd" parameterType="pd">
+
+		select '来电次数' as `name`,count(a.id) as value from tthjl a LEFT JOIN tthjl_zxjtls b ON a.id=b.thjl_id WHERE a.thfx='0'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+		union all
+		select '接听次数' as `name`,count(a.id) as value from tthjl a LEFT JOIN tthjl_zxjtls b ON a.id=b.thjl_id WHERE a.thfx='0' AND b.id IS NOT NULL
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+		union all
+		select '呼出次数' as `name`,count(a.id) as value from tthjl a LEFT JOIN tthjl_zxjtls b ON a.id=b.thjl_id WHERE a.thfx='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+		union all
+		select '未接来电次数' as `name`,count(id) as value from tivropt where
+		czxm = '转人工'
+		AND czjg = '失败'
+		AND dhhm != ''
+		AND dhhm IS NOT NULL
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czsj BETWEEN #{starttime} and #{endtime}
+		</if>
+		union all
+		select '未接通次数' as `name`,count(id) as value from tesp_revrecord where isjt='0'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		union all
+		select '机器人接待' as `name`,count(id) as value from thwrz where sfzrg='0' and thfx='0'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+	</select>
+
+	<select id="TrafficlistPage" resultType="pd" parameterType="Page">
+		SELECT a.zxid,
+		IFNULL(SUM(CASE WHEN a.thfx='0' THEN 1 ELSE 0 END),0) hrl,
+		IFNULL(SUM(CASE WHEN a.thfx='0' AND b.id IS NOT NULL THEN 1 ELSE 0 END),0) hrjtl,
+		IFNULL(SUM(CASE WHEN a.thfx='0' AND b.id IS NOT NULL THEN b.thsj ELSE 0 END),0) hrthsc,
+		IFNULL(SUM(CASE WHEN a.thfx='1' THEN 1 ELSE 0 END),0) whl,
+		IFNULL(SUM(CASE WHEN a.thfx='1' AND b.id IS NOT NULL THEN 1 ELSE 0 END),0) whjtl,
+		IFNULL(SUM(CASE WHEN a.thfx='1' AND b.id IS NOT NULL THEN b.thsj ELSE 0 END),0) whthsc,
+		IFNULL(ROUND(SUM(CASE WHEN b.id IS NOT NULL THEN b.thsj ELSE 0 END)/SUM(CASE WHEN b.id IS NOT NULL THEN 1 ELSE 0 END),2),0) AS pjthsc,
+		IFNULL(SUM(CASE WHEN b.id IS NOT NULL THEN b.ddsj ELSE 0 END),0) pdsj,
+		IFNULL(SUM(CASE WHEN b.id IS NOT NULL THEN b.fwsj ELSE 0 END),0) gzzsc,
+		IFNULL((SELECT SUM(ljsj) FROM tzxczrz t WHERE t.zx=a.zxid AND czxm='1'
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and t.fssj BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid!=null and pd.zxid!=''">
+			and t.zx=#{pd.zxid}
+		</if>
+		 GROUP BY t.zx),0) AS dlsc
+		FROM tthjl a LEFT JOIN tthjl_zxjtls b ON a.id=b.thjl_id
+		where 1=1
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and a.kssj BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid!=null and pd.zxid!=''">
+			and a.zxid=#{pd.zxid}
+		</if>
+		GROUP BY a.zxid
+	</select>
+<!--回访统计-->
+	<select id="Revrecordtitle" resultType="pd" parameterType="pd">
+
+		select '回访次数' as `name`,count(*) as `value` from tesp_revrecord  where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="zxid!=null and zxid!=''">
+			and zxid=#{zxid}
+		</if>
+		union all
+		select '接通次数' as `name`,count(*) as `value` from tesp_revrecord where isjt='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="zxid!=null and zxid!=''">
+			and zxid=#{zxid}
+		</if>
+		union all
+		select '未接通次数' as `name`,count(*) as `value` from tesp_revrecord where isjt='0'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="zxid!=null and zxid!=''">
+			and zxid=#{zxid}
+		</if>
+		union all
+		select '有效回访数' as `name`,count(*) as `value` from tesp_revrecord where result='1'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="zxid!=null and zxid!=''">
+			and zxid=#{zxid}
+		</if>
+		union all
+		select '无效回访数' as `name`,count(*) as `value` from tesp_revrecord where result='0'
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="zxid!=null and zxid!=''">
+			and zxid=#{zxid}
+		</if>
+		union all
+		select '回访成功率' as `name`,CONVERT(CONCAT(IFNULL(ROUND(sum(case when result='1' then 1 else 0 end)/count(id),2),0)*100,'%'),CHAR(20)) as `value` from tesp_revrecord where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and cztime BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="zxid!=null and zxid!=''">
+			and zxid=#{zxid}
+		</if>
+
+
+	</select>
+
+
+
+	<select id="RevrecordlistPage" resultType="pd" parameterType="Page">
+		select zxid,
+		sum(case when id is not null then 1 else 0 end) as hfcs,
+		sum(case when isjt='1' then 1 else 0 end) as jtcs,
+		sum(case when isjt='0' then 1 else 0 end) as wjtcs,
+		sum(case when result='1' then 1 else 0 end) as yxhf,
+		sum(case when result='0' then 1 else 0 end) as wxhf,
+		CONCAT(IFNULL(ROUND(sum(case when result='1' then 1 else 0 end)/sum(case when id is not null then 1 else 0 end),2),0)*100,'%') as hfl
+		from tesp_revrecord
+		where 1=1
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid!=null and pd.zxid!=''">
+			and zxid=#{pd.zxid}
+		</if>
+		group by zxid
+	</select>
+<!--	企业用工数据统计 招工人数-->
+	<select id="totalrecruit" resultType="pd" parameterType="pd">
+		select sum(case when zgrs is null then 1
+		when zgrs='数名' then 5
+		when zgrs='' then 1
+		else zgrs end
+		)  as total from tesp_employreg where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+	</select>
+	<select id="xlrecruitlist" resultType="pd" parameterType="pd">
+
+		select
+			sum(case when zgrs is null then 1
+								  when zgrs='数名' then 5
+								  when zgrs='' then 1
+								  else zgrs end
+				)  as value,ifnull(b.name,'未知') as name from tesp_employreg a
+																  left join sys_dictionaries b on a.xl=b.DICTIONARIES_ID
+		where 1=1
+
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		group by b.name
+	</select>
+	<select id="sexrecruitlist" resultType="pd" parameterType="pd">
+
+                select
+                    sum(case when zgrs is null then 1
+                             when zgrs='数名' then 5
+                             when zgrs='' then 1
+                             else zgrs end
+                        )  as value,(case when sex='1' then '男' when sex='2' then '女'  else '不限' end) as name from tesp_employreg a
+
+                where 1=1
+				<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+					and czdate BETWEEN #{starttime} and #{endtime}
+				</if>
+                 group by (case when sex='1' then '男' when sex='2' then '女'  else '不限' end)
+
+	</select>
+	<select id="agerecruitlist" resultType="pd" parameterType="pd">
+		select group_concat(value) as data,group_concat(name) as name from (
+		select
+		sum(case when zgrs is null then 1
+		when zgrs='数名' then 5
+		when zgrs='' then 1
+		else zgrs end
+		)  as value,(SELECT  CASE
+		WHEN (agestart &gt;= 16
+		AND ageend &lt;= 20)
+		THEN '16-20'
+		WHEN (agestart &gt;= 18
+		AND ageend &lt;= 45)
+		THEN '18-45'
+		WHEN agestart &gt;= 45
+		AND ageend &lt;= 60
+		THEN '45-60'
+		WHEN agestart = 0
+		AND ageend = 100
+		THEN '不限'
+		ELSE '不限'
+		END ) as name from tesp_employreg
+		where 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and czdate BETWEEN #{starttime} and #{endtime}
+		</if>
+		 group by name
+		) a
+	</select>
+<!--	统计本月每天的用工量-->
+   	<select id="MonthCompanyLine" resultType="pd" parameterType="pd">
+		select
+		group_concat(tomonth.d) as name
+		,group_concat(ifnull(value,0)) as data
+		from(
+		SELECT 1 AS d UNION ALL
+		SELECT 2 UNION ALL
+		SELECT 3 UNION ALL
+		SELECT 4 UNION ALL
+		SELECT 5 UNION ALL
+		SELECT 6 UNION ALL
+		SELECT 7 UNION ALL
+		SELECT 8 UNION ALL
+		SELECT 9 UNION ALL
+		SELECT 10 UNION ALL
+		SELECT 11 UNION ALL
+		SELECT 12 UNION ALL
+		SELECT 13 UNION ALL
+		SELECT 14 UNION ALL
+		SELECT 15 UNION ALL
+		SELECT 16 UNION ALL
+		SELECT 17 UNION ALL
+		SELECT 18 UNION ALL
+		SELECT 19 UNION ALL
+		SELECT 20 UNION ALL
+		SELECT 21 UNION ALL
+		SELECT 22 UNION ALL
+		SELECT 23 UNION ALL
+		SELECT 24 UNION ALL
+		SELECT 25 UNION ALL
+		SELECT 26 UNION ALL
+		SELECT 27 UNION ALL
+		SELECT 28 UNION ALL
+		SELECT 29 UNION ALL
+		SELECT 30 UNION ALL
+		SELECT 31
+		) tomonth
+		left join (select count(id) as value,DAY(czdate) time
+		from tesp_employreg
+		where 1=1
+		and czdate
+		BETWEEN (SELECT DATE_FORMAT( CURDATE(), '%Y-%m-01 00:00:00'))
+		and (SELECT DATE_FORMAT( LAST_DAY(CURDATE()), '%Y-%m-%d 23:59:59'))
+		group by DAY(czdate)) num on tomonth.d=num.time
+	</select>
+
+<!--	统计本月每天的求职量-->
+	<select id="MonthPersonLine" resultType="pd" parameterType="pd">
+		select
+		group_concat(tomonth.d) as name
+		,group_concat(ifnull(value,0)) as data
+		from(
+		SELECT 1 AS d UNION ALL
+		SELECT 2 UNION ALL
+		SELECT 3 UNION ALL
+		SELECT 4 UNION ALL
+		SELECT 5 UNION ALL
+		SELECT 6 UNION ALL
+		SELECT 7 UNION ALL
+		SELECT 8 UNION ALL
+		SELECT 9 UNION ALL
+		SELECT 10 UNION ALL
+		SELECT 11 UNION ALL
+		SELECT 12 UNION ALL
+		SELECT 13 UNION ALL
+		SELECT 14 UNION ALL
+		SELECT 15 UNION ALL
+		SELECT 16 UNION ALL
+		SELECT 17 UNION ALL
+		SELECT 18 UNION ALL
+		SELECT 19 UNION ALL
+		SELECT 20 UNION ALL
+		SELECT 21 UNION ALL
+		SELECT 22 UNION ALL
+		SELECT 23 UNION ALL
+		SELECT 24 UNION ALL
+		SELECT 25 UNION ALL
+		SELECT 26 UNION ALL
+		SELECT 27 UNION ALL
+		SELECT 28 UNION ALL
+		SELECT 29 UNION ALL
+		SELECT 30 UNION ALL
+		SELECT 31
+		) tomonth
+		left join (select count(id) as value,DAY(czdate) time
+		from tesp_jobreg
+		where 1=1
+		and czdate
+		BETWEEN (SELECT DATE_FORMAT( CURDATE(), '%Y-%m-01 00:00:00'))
+		and (SELECT DATE_FORMAT( LAST_DAY(CURDATE()), '%Y-%m-%d 23:59:59'))
+		group by DAY(czdate)) num on tomonth.d=num.time
+	</select>
+
+	<!--	宣传轨迹统计-->
+	<select id="DataTrack" resultType="pd" parameterType="pd">
+		select group_concat(value) as data,group_concat(name) as name from (
+			select
+			ifnull(count(id),0) value,
+			(case when khpj=1 then '很不满意'
+			when khpj=2 then '不满意'
+			when khpj=3 then '一般'
+			when khpj=4 then '满意'
+			when khpj=5 then '非常满意'
+			WHEN khpj is null THEN '无评价'
+			else '无评价' end
+			) name
+			from tthjl
+			where 1=1
+			<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+				and kssj BETWEEN #{starttime} and #{endtime}
+
+			</if>
+			<if test="khpjname!=null and khpjname!=''">
+				and (case when khpj=1 then '很不满意'
+				when khpj=2 then '不满意'
+				when khpj=3 then '一般'
+				when khpj=4 then '满意'
+				when khpj=5 then '非常满意'
+				WHEN khpj is null THEN '无评价'
+				else '无评价' end
+				)=#{name}
+			</if>
+			group by name
+		)a
+
+	</select>
+	<select id="TracklistPage" resultType="pd" parameterType="Page">
+		select * from (SELECT
+		a.ucid,
+		a.lywj,
+		a.lylx,
+		e.zxid,
+		IFNULL(e.khpj,0) khpj,
+		(CASE WHEN e.khpj=1 THEN '很不满意'
+		WHEN e.khpj=2 THEN '不满意'
+		WHEN e.khpj=3 THEN '一般'
+		WHEN e.khpj=4 THEN '满意'
+		WHEN e.khpj=5 THEN '非常满意'
+		WHEN e.khpj IS NULL THEN '无评价'
+		ELSE '无评价' END
+		) khpjname,
+		DATE_FORMAT(e.kssj, "%Y-%m-%d %T") AS lysj,
+		DATE_FORMAT(e.kssj, "%Y-%m-%d %T") AS kssj,
+		DATE_FORMAT(e.jssj, "%Y-%m-%d %T") AS jssj,
+		DATE_FORMAT(com.czdate, "%Y-%m-%d %T") AS czdate,
+		e.thsj,
+		c.zxxm AS zxname,
+		com.tel,
+		com.name,
+		com.czman,
+		com.uid,
+		com.id AS cpid,
+		'1' AS type,
+		'企业' AS typename,
+		e.thfx
+		FROM
+		tesp_company com
+		left join tesp_pk_record pk on  pk.uid=com.uid
+		LEFT JOIN tthjl e ON pk.ucid= e.ucid
+		left join trecord a on a.ucid = e.ucid
+		LEFT JOIN tzxlb c ON com.czman = c.zxyh
+		WHERE
+
+		1=1
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+			(
+			com.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			or
+			a.zjhm LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			or
+			com.tel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			)
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!=''"><!-- 开始时间检索 -->
+			and e.kssj &gt;= #{pd.starttime}
+		</if>
+
+		<if test="pd.endtime!=null and pd.endtime!=''"><!-- 开始时间检索 -->
+			and e.kssj &lt;= #{pd.endtime}
+		</if>
+
+		<if test="pd.phone!= null and pd.phone!= ''">
+			and (
+			e.zjhm LIKE CONCAT(CONCAT('%', #{pd.phone}),'%')
+			or
+			e.bjhm LIKE CONCAT(CONCAT('%', #{pd.phone}),'%')
+			or
+			com.tel LIKE CONCAT(CONCAT('%', #{pd.phone}),'%')
+			)
+		</if>
+		<if test="pd.zxid!= null and pd.zxid!= ''">
+			and a.zxid=#{pd.zxid}
+		</if>
+		<if test="pd.thfx!= null and pd.thfx!= ''">
+			and e.thfx=#{pd.thfx}
+		</if>
+		union all
+
+		select
+		a.ucid,
+		a.lywj,
+		a.lylx,
+		e.zxid,
+		IFNULL(e.khpj,0) khpj,
+		(CASE WHEN e.khpj=1 THEN '很不满意'
+		WHEN e.khpj=2 THEN '不满意'
+		WHEN e.khpj=3 THEN '一般'
+		WHEN e.khpj=4 THEN '满意'
+		WHEN e.khpj=5 THEN '非常满意'
+		WHEN e.khpj IS NULL THEN '无评价'
+		ELSE '无评价' END
+		) khpjname,
+		DATE_FORMAT(e.kssj, "%Y-%m-%d %T") AS lysj,
+		DATE_FORMAT(e.kssj, "%Y-%m-%d %T") AS kssj,
+		DATE_FORMAT(e.jssj, "%Y-%m-%d %T") AS jssj,
+		DATE_FORMAT(com.czdate, "%Y-%m-%d %T") AS czdate,
+		e.thsj,
+		c.zxxm AS zxname,
+		com.tel,
+		com.name,
+		com.czman,
+		com.uid,
+		com.id AS cpid,
+		'2' AS type,
+		'个人' AS typename,
+		e.thfx
+		FROM
+		tesp_person com
+		left join tesp_pk_record pk on  pk.uid=com.uid
+		LEFT JOIN tthjl e ON pk.ucid= e.ucid
+		left join trecord a on a.ucid = e.ucid
+		LEFT JOIN tzxlb c ON com.czman = c.zxyh
+		WHERE
+		--	(isimpot is null  or isimpot='')
+		1=1
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+			(
+			com.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			or
+
+			a.zjhm LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			or
+			com.tel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			)
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!=''"><!-- 开始时间检索 -->
+			and e.kssj &gt;= #{pd.starttime}
+		</if>
+
+		<if test="pd.endtime!=null and pd.endtime!=''"><!-- 开始时间检索 -->
+			and e.kssj &lt;= #{pd.endtime}
+		</if>
+
+		<if test="pd.phone!= null and pd.phone!= ''">
+			and (
+			e.zjhm LIKE CONCAT(CONCAT('%', #{pd.phone}),'%')
+			or
+			e.bjhm LIKE CONCAT(CONCAT('%', #{pd.phone}),'%')
+			or
+			com.tel LIKE CONCAT(CONCAT('%', #{pd.phone}),'%')
+			)
+		</if>
+		<if test="pd.zxid!= null and pd.zxid!= ''">
+			and a.zxid=#{pd.zxid}
+		</if>
+		<if test="pd.thfx!= null and pd.thfx!= ''">
+			and e.thfx=#{pd.thfx}
+		</if>
+		) a where 1=1
+		<if test="pd.type!= null and pd.type!= ''">
+			and a.type=#{pd.type}
+		</if>
+		<if test="pd.khpj!=null and pd.khpj!=''">
+			and khpj=#{pd.khpj}
+		</if>
+        <if test="pd.khpjname!=null and pd.khpjname!=''">
+            and khpjname=#{pd.khpjname}
+        </if>
+		order by a.lysj desc
+	</select>
+
+	<select id="PersonServerlistPage" parameterType="Page" resultType="pd">
+		select
+		zxid,
+		ifnull((select count(id) from tesp_revrecord rev where 1=1 and zx.zxid=rev.zxid
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		group by rev.zxid),0) rev, -- 回访量
+		ifnull((select count(id) from tthjl as thjl where thjl.zxid=zx.zxid and thfx='0'
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and kssj BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		group by thjl.zxid),0) thjl,-- 接线量
+		ifnull((select count(id) from tesp_ywyd as ywyd where ywyd.czman=zx.zxyh
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		group by ywyd.czman),0) ywyd,-- 业务咨询量
+		ifnull((select count(id) from tesp_qtfw as qtfw where qtfw.czman=zx.zxyh
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		group by qtfw.czman),0) qtfw,-- 其他服务量
+		ifnull((select count(id) from tesp_trainreco as train where train.zxid=zx.zxid
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		group by train.zxid),0) train,-- 技能培训量
+		ifnull((select count(id) from tesp_jobreg as reg where reg.czman=zx.zxyh
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		group by reg.czman),0) reg,-- 求职登记量
+		ifnull((select count(id) from tesp_employreg as emp where emp.czman=zx.zxyh
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		group by emp.czman),0) emp,-- 用工登记量
+		ifnull((SELECT COUNT(id) FROM tesp_zczx AS zczx WHERE zczx.czman=zx.zxyh AND zczxtype!='086d5bf998bc45eaa9056e58fad53411'
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zczx.czman),0) zczx,-- 政策咨询量
+		ifnull((SELECT COUNT(id) FROM tesp_zczx AS zczx WHERE zczx.czman=zx.zxyh AND zczxtype='086d5bf998bc45eaa9056e58fad53411'
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zczx.czman),0) zctj -- 政策推荐量
+		from tzxlb zx
+		where 1=1
+		<if test="pd.zxid!=null and pd.zxid!=''">
+			and zx.zxid=#{pd.zxid}
+		</if>
+		group by zx.zxid
+	</select>
+
+	<select id="LocallistPage" parameterType="Page" resultType="pd">
+        SELECT SUM(p.job) job,SUM(p.emp) emp,SUM(p.jn) jn,SUM(p.ywyd) ywyd,SUM(p.zczx) zczx,SUM(p.qtfw) qtfw,SUM(p.th) th,IFNULL(m.City,'未知') city FROM (
+              SELECT uid,
+                     lxtel,
+                     (SELECT COUNT(id) FROM tesp_jobreg job WHERE job.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                     ) job, -- 求职登记次数
+                     (SELECT COUNT(id) FROM tesp_employreg emp WHERE emp.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                     ) emp, -- 用工登记次数
+                     (SELECT COUNT(id) FROM tesp_trainreco jn WHERE jn.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                     ) jn,-- 技能培训次数
+                     (SELECT COUNT(id) FROM tesp_ywyd ywyd WHERE ywyd.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                     ) ywyd,-- 业务引导次数
+                     (SELECT COUNT(id) FROM tesp_zczx zczx WHERE zczx.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                     ) zczx, -- 政策咨询次数
+                     (SELECT COUNT(id) FROM tesp_qtfw qtfw WHERE qtfw.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                     ) qtfw,-- 其他服务次数
+                    (SELECT COUNT(id) FROM tthjl th WHERE th.hdhm=p.lxtel AND thfx='1'
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and kssj BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) th -- 来电次数
+              FROM tesp_person p
+              UNION ALL
+              SELECT uid,
+                     lxtel,
+                    (SELECT COUNT(id) FROM tesp_jobreg job WHERE job.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) job, -- 求职登记次数
+                    (SELECT COUNT(id) FROM tesp_employreg emp WHERE emp.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) emp, -- 用工登记次数
+                    (SELECT COUNT(id) FROM tesp_trainreco jn WHERE jn.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) jn,-- 技能培训次数
+                    (SELECT COUNT(id) FROM tesp_ywyd ywyd WHERE ywyd.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) ywyd,-- 业务引导次数
+                    (SELECT COUNT(id) FROM tesp_zczx zczx WHERE zczx.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) zczx, -- 政策咨询次数
+                    (SELECT COUNT(id) FROM tesp_qtfw qtfw WHERE qtfw.uid=p.uid
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and czdate BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) qtfw,-- 其他服务次数
+                    (SELECT COUNT(id) FROM tthjl th WHERE th.hdhm=p.lxtel AND thfx='1'
+                    <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+                        and kssj BETWEEN #{pd.starttime} and #{pd.endtime}
+                    </if>
+                    ) th -- 来电次数
+              FROM tesp_company p
+          ) p  LEFT JOIN mobile m ON LEFT(p.lxtel,7)=m.Mobile
+          where 1=1
+		<if test="pd.city!=null and pd.city!=''">
+			and m.City LIKE CONCAT(CONCAT('%', #{pd.city}),'%')
+		</if>
+        GROUP BY m.City
+        ORDER BY th DESC
+	</select>
+
+    <insert id="insertholiday" parameterType="pd">
+        insert into tesp_holiday
+        (
+        id,
+        type,
+        starttime,
+        endtime,
+        czman,
+        czdate
+        )value (
+        #{id},
+        #{type},
+        #{starttime},
+        #{endtime},
+        #{czman},
+        #{czdate}
+        )
+    </insert>
+
+    <insert id="updateholiday" parameterType="pd">
+       update tesp_holiday
+            set
+             type=#{type},
+             starttime=#{starttime},
+             endtime=#{endtime}
+        where id = #{id}
+    </insert>
+
+    <select id="findholiday" parameterType="Page" resultType="pd">
+        select
+        id,
+        type,
+		DATE_FORMAT(endtime,'%Y-%m-%d %H:%i:%s') endtime,
+		DATE_FORMAT(starttime,'%Y-%m-%d %H:%i:%s') starttime,
+		czdate,
+		czman
+from tesp_holiday
+	order by czdate desc
+    </select>
+
+	<select id="deleteholiday" parameterType="Page" resultType="pd">
+        delete  from tesp_holiday where id=#{id}
+    </select>
+</mapper>

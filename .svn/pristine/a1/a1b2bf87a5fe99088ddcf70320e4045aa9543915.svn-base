@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="otherPersonMapper">
+    <sql id="Field">
+     `id`,
+	`uid`,
+	`name`,
+	DATE_FORMAT(czdate,"%Y-%m-%d %T") as `czdate`,
+	`sex`,
+	`cardid`,
+	`isjob`,
+	`tel`,
+	`cate`
+    </sql>
+    <sql id="saveField">
+        `czdate`,`uid`,`name`,sex,cardid,tel,lxtel,age,jg,cate,isjob,email,xl,zy,isimpot
+    </sql>
+    <sql id="SaveValue">
+        NOW(),
+        MD5(UUID()),
+        <choose>
+            <when test="name!=null and name!=''">#{name},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+
+        <choose>
+            <when test="sex!=null and sex!=''">#{sex},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="cardid!=null and cardid!=''">#{cardid},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="tel!=null and tel!=''">#{tel},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="lxtel!=null and lxtel!=''">#{lxtel},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+
+        <choose>
+            <when test="age!=null and age!=''">#{age},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="jg!=null and jg!=''">#{jg},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        (SELECT dictionaries_id
+        FROM sys_dictionaries
+        WHERE name_en = 'other'),
+        <choose>
+            <when test="isjob!=null and isjob!=''">#{isjob},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        <choose>
+            <when test="email!=null and email!=''">#{email},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        (SELECT dictionaries_id
+        FROM sys_dictionaries
+        WHERE `name` = #{xl}),
+        <choose>
+            <when test="zy!=null and zy!=''">#{zy},</when>
+            <otherwise>'暂无',</otherwise>
+        </choose>
+        '1'
+    </sql>
+    <sql id="table">
+        `tesp_person`
+    </sql>
+
+<!--    根据条件查询所有其他人员     -->
+    <select id="findAlllistPage" resultType="pd"  parameterType="page" >
+        select <include refid="Field" /> from <include refid="table"/> where cate in (SELECT dictionaries_id  FROM sys_dictionaries WHERE name_en = "other")
+
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and  czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt;  #{pd.endTime}
+        </if>
+        <if test="pd.isjob != null and pd.isjob != ''">
+            and isjob  = #{pd.isjob}
+        </if>
+        order by czdate desc
+    </select>
+<!--    根据ID或者UID查询-->
+    <select id="findByIdUid" resultType="pd"  parameterType="page" >
+        select <include refid="Field" /> from <include refid="table"/> where cate in (SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = "other")
+        <if test="id != null and id != ''">
+            and id = #{id}
+        </if>
+        <if test="uid != null and uid != ''">
+            and uid = #{uid}
+        </if>
+    </select>
+    <insert id="save" parameterType="pd">
+        insert into
+        <include refid="table"/>
+        (<include refid="saveField" />)
+        values (
+        <include refid="SaveValue" />)
+    </insert>
+
+
+    <select id="findbyId" resultType="pd"  parameterType="page" >
+        select * from  `tesp_person` where 1 = 1
+        <if test="id != null and id != ''">
+            and id = #{id}
+        </if>
+    </select>
+    <update id="update" parameterType="pd">
+        UPDATE
+            `tesp_person`
+        SET
+            `sex` = #{sex},
+            `name` = #{name},
+            `email` = #{email},
+            `tel` = #{tel},
+            `age` = #{age},
+            `jg` = #{jg},
+            `isjob` = #{isjob},
+            `xl` = #{xl},
+            `zy` = #{zy},
+            `cardid` = #{cardid},
+            `cate` = #{cate}
+           where `id` = #{id}
+
+    </update>
+</mapper>

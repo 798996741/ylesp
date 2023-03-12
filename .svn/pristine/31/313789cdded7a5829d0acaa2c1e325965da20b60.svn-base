@@ -1,0 +1,446 @@
+package com.yulun.controller.outercall;
+
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.fh.util.StringUtil;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.OuterCallTaskManager;
+import com.yulun.utils.FloatUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class OuterCallTask implements CommonIntefate {
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+    @Resource(name = "outerCallTaskService")
+    private OuterCallTaskManager outerCallTaskManager;
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        Page page = new Page();
+        PageData pd_stoken = new PageData();
+        JSONObject json = data.getJSONObject("data");
+        pd_stoken.put("TOKENID", json.get("tokenid"));
+        String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+        PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+        JSONObject object = new JSONObject();
+        pd.putAll(json);
+        object.put("success", "true");
+        if (pd_token != null) {
+            if (cmd.equals("dictionaries")) {
+                pd.put("bianma", json.getString("bianma"));
+                List<PageData> allDictionariesPage = outerCallTaskManager.findAllDictionariesPage(pd);
+                object.put("data", allDictionariesPage);
+                //任务列表
+            } else if (cmd.equals("tasklist")) {
+                Integer pageIndex;
+                Integer pageSize;
+                List<PageData> list;
+                pageIndex = json.getInteger("pageIndex");
+                page.setCurrentPage(pageIndex);
+                pageSize = json.getInteger("pageSize");
+                page.setShowCount(pageSize);
+                page.setPd(pd);
+                list = outerCallTaskManager.listPage(page);
+                if (list.size() > 0) {
+                    object.put("success", "true");
+                    object.put("data", list);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                } else {
+                    object.put("success", "false");
+                    object.put("msg", "暂无数据");
+                }
+                //删除任务
+            } else if (cmd.equals("deleteTask")) {
+                outerCallTaskManager.deleteTask(pd);
+                //暂停列表
+            } else if (cmd.equals("pauseTask")) {
+                outerCallTaskManager.pauseTask(pd);
+                //启动任务
+            } else if (cmd.equals("startTask")) {
+
+                outerCallTaskManager.startTask(pd);
+                //获取外呼数据
+            } else if (cmd.equals("outboundData")) {
+                List<PageData> list = new ArrayList<PageData>();
+                Object cate = pd.get("cate");
+                if (cate == null || StringUtils.isEmpty(cate.toString())) {
+                    object.put("success", "false");
+                    object.put("msg", "客户类型不能为空");
+                    return object;
+                }
+                list = outerCallTaskManager.findCatelistPage(pd);
+                if (cate.toString().contains("a3acfd971c8b488d8249a5d9e00483c4")) {
+                    List<PageData> catelistPage = outerCallTaskManager.findcompanylistPage(pd);
+                    for (PageData pageData : catelistPage) {
+                        pageData.put("cate", "a3acfd971c8b488d8249a5d9e00483c4");
+                    }
+                    list.addAll(catelistPage);
+                }
+                if (list.size() > 0) {
+                    int isDeduplica = json.getIntValue("isDeduplica");
+                    if (isDeduplica == 1) {
+                        Map<String, PageData> pageDataMap = new HashMap<>();
+                        for (PageData pageData : list) {
+                            pageDataMap.put(pageData.getString("lxtel"), pageData);
+                        }
+                        object.put("data", new ArrayList<>(pageDataMap.values()));
+                    } else {
+                        object.put("data", list);
+                    }
+                    object.put("success", "true");
+
+                } else {
+                    object.put("success", "false");
+                    object.put("msg", "暂无数据");
+                }
+            } else if (cmd.equals("addTask")) {
+                if (StringUtils.isBlank(json.getString("taskid"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务id不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("cate"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务类型不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("name"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务名称不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("robotSpeak"))) {
+                    object.put("success", "false");
+                    object.put("msg", "话术不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("voicePath"))) {
+                    object.put("success", "false");
+                    object.put("msg", "录音文件不能为空");
+                    return object;
+                }
+                int importType = json.getIntValue("importType");
+                BufferedReader br = request.getReader();
+                String str = "";
+                StringBuffer wholeStr = new StringBuffer();
+                while ((str = br.readLine()) != null) {
+                    wholeStr.append(str);
+                }
+                if (StringUtils.isEmpty(wholeStr.toString())) {
+                    object.put("success", "false");
+                    object.put("msg", "外呼数据不能为空");
+                    return object;
+                }
+
+                JSONArray outboundList = JSONObject.parseArray(wholeStr.toString());
+                if (outboundList == null || outboundList.size() == 0) {
+                    object.put("success", "false");
+                    object.put("msg", "外呼数据不能为空");
+                    return object;
+                }
+                //系统导入
+                if (importType == 1) {
+                    if (StringUtils.isBlank(json.getString("userCate"))) {
+                        object.put("success", "false");
+                        object.put("msg", "客户类型不能为空");
+                        return object;
+                    }
+                    //手工导入
+                } else if (importType == 2) {
+                    for (int i = 0; i < outboundList.size(); i++) {
+                        PageData data1 = new PageData();
+                        JSONObject jsonObject = outboundList.getJSONObject(i);
+                        Object sex = jsonObject.get("sex");
+                        if (sex != null) {
+                            jsonObject.put("sex", sex.toString().equals("男") ? 1 : 2);
+                        }
+                        PageData bianma = new PageData();
+                        bianma.put("bianma", "033");
+                        List<PageData> allDictionariesPage = outerCallTaskManager.findAllDictionariesPage(bianma);
+                        Map<String, String> typeMap = new HashMap<>();
+                        for (PageData pageData : allDictionariesPage) {
+                            typeMap.put(pageData.get("NAME").toString(), pageData.get("DICTIONARIES_ID").toString());
+                        }
+                        Object cate = jsonObject.get("cate");
+                        if (cate != null) {
+                            jsonObject.put("cate", typeMap.get(cate.toString()));
+                        }
+                    }
+                } else {
+                    object.put("success", "false");
+                    object.put("msg", "导入类型不正确");
+                    return object;
+                }
+//                JSONArray outboundList = json.getJSONArray("outboundList");
+//                if (outboundList == null || outboundList.size() == 0) {
+//                    object.put("success", "false");
+//                    object.put("msg", "导入类型不正确");
+//                    return object;
+//                }
+                if (StringUtils.isBlank(json.getString("startTime"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务开始时间不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("endTime"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务截止时间不能为空");
+                    return object;
+                }
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                try {
+                    Date startTime = formatter.parse(json.getString("startTime"));
+                    Date endTime = formatter.parse(json.getString("endTime"));
+                    if (endTime.before(startTime)) {
+                        object.put("success", "false");
+                        object.put("msg", "任务开始时间必须大于结束时间");
+                        return object;
+                    }
+                } catch (Exception e) {
+                    object.put("success", "false");
+                    object.put("msg", "任务时间格式不正确");
+                    return object;
+                }
+                pd.put("createUserId", pd_token.getString("ID"));
+                outerCallTaskManager.insertTask(pd);
+                if (pd.get("id") == null) {
+                    object.put("success", "false");
+                    object.put("msg", "创建任务失败");
+                    return object;
+                }
+                for (int i = 0; i < outboundList.size(); i++) {
+                    PageData data1 = new PageData();
+                    JSONObject jsonObject = outboundList.getJSONObject(i);
+                    jsonObject.put("taskid", pd.get("id"));
+                    data1.putAll(jsonObject);
+                    outerCallTaskManager.insertTaskCallUser(data1);
+                }
+                System.out.println(pd);
+                //获取任务信息
+            } else if (cmd.equals("selectOne")) {
+                PageData pageData = outerCallTaskManager.selectOneById(pd);
+                pageData.put("outboundData", outerCallTaskManager.selectOutboundData(pd));
+                object.put("data", pageData);
+            } else if (cmd.equals("editTask")) {
+                if (StringUtils.isBlank(json.getString("taskid"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务id不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("cate"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务类型不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("name"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务名称不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("robotSpeak"))) {
+                    object.put("success", "false");
+                    object.put("msg", "话术不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("voicePath"))) {
+                    object.put("success", "false");
+                    object.put("msg", "录音文件不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("startTime"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务开始时间不能为空");
+                    return object;
+                }
+                if (StringUtils.isBlank(json.getString("endTime"))) {
+                    object.put("success", "false");
+                    object.put("msg", "任务截止时间不能为空");
+                    return object;
+                }
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                try {
+                    Date startTime = formatter.parse(json.getString("startTime"));
+                    Date endTime = formatter.parse(json.getString("endTime"));
+                    if (endTime.before(startTime)) {
+                        object.put("success", "false");
+                        object.put("msg", "任务开始时间必须大于结束时间");
+                        return object;
+                    }
+                } catch (Exception e) {
+                    object.put("success", "false");
+                    object.put("msg", "任务时间格式不正确");
+                    return object;
+                }
+                outerCallTaskManager.editTask(pd);
+            } else if (cmd.equals("addCallUsers")) {
+                if (json.get("id") == null) {
+                    object.put("success", "false");
+                    object.put("msg", "任务不存在");
+                    return object;
+                }
+                BufferedReader br = request.getReader();
+                String str = "";
+                StringBuffer wholeStr = new StringBuffer();
+                while ((str = br.readLine()) != null) {
+                    wholeStr.append(str);
+                }
+                if (StringUtils.isEmpty(wholeStr.toString())) {
+                    object.put("success", "false");
+                    object.put("msg", "外呼数据不能为空");
+                    return object;
+                }
+                JSONArray outboundList = JSONObject.parseArray(wholeStr.toString());
+                if (outboundList == null || outboundList.size() == 0) {
+                    object.put("success", "false");
+                    object.put("msg", "外呼数据不能为空");
+                    return object;
+                }
+                for (int i = 0; i < outboundList.size(); i++) {
+                    PageData data1 = new PageData();
+                    JSONObject jsonObject = outboundList.getJSONObject(i);
+                    Object sex = jsonObject.get("sex");
+                    if (sex != null) {
+                        jsonObject.put("sex", sex.toString().equals("男") ? 1 : 2);
+                    }
+                    PageData bianma = new PageData();
+                    bianma.put("bianma", "033");
+                    List<PageData> allDictionariesPage = outerCallTaskManager.findAllDictionariesPage(bianma);
+                    Map<String, String> typeMap = new HashMap<>();
+                    for (PageData pageData : allDictionariesPage) {
+                        typeMap.put(pageData.get("NAME").toString(), pageData.get("DICTIONARIES_ID").toString());
+                    }
+                    Object cate = jsonObject.get("cate");
+                    if (cate != null) {
+                        jsonObject.put("cate", typeMap.get(cate.toString()));
+                    }
+                }
+                if (pd.get("id") == null) {
+                    object.put("success", "false");
+                    object.put("msg", "创建任务失败");
+                    return object;
+                }
+                for (int i = 0; i < outboundList.size(); i++) {
+                    PageData data1 = new PageData();
+                    JSONObject jsonObject = outboundList.getJSONObject(i);
+                    jsonObject.put("taskid", json.get("id"));
+                    data1.putAll(jsonObject);
+                    outerCallTaskManager.insertTaskCallUser(data1);
+                }
+            } else if (cmd.equals("replay")) {
+                if (json.get("id") == null) {
+                    object.put("success", "false");
+                    object.put("msg", "任务不存在");
+                    return object;
+                }
+                outerCallTaskManager.replayUnCallUser(pd);
+                outerCallTaskManager.startTask(pd);
+            } else if (cmd.equals("taskDetail")) {
+                if (json.get("id") == null) {
+                    object.put("success", "false");
+                    object.put("msg", "任务不存在");
+                    return object;
+                }
+                PageData pageData = outerCallTaskManager.selectOneDetailById(pd);
+                Object cate = pageData.get("userCate");
+                if (cate != null && StringUtils.isNotEmpty(cate.toString())) {
+                    String[] split = cate.toString().split(",");
+                    List<String> cateList = new ArrayList<>();
+                    if (split != null && split.length > 0) {
+                        for (String s : split) {
+                            String cateStr = outerCallTaskManager.findcateByid(s);
+                            cateList.add(cateStr);
+                        }
+
+                    }
+                    String cateResult = "";
+                    int i = 0;
+                    for (String s : cateList) {
+                        if (StringUtils.isNotEmpty(s)) {
+                            if (i > 0) {
+                                cateResult += ",";
+                            }
+                            cateResult += s;
+                            i++;
+                        }
+                    }
+                    pageData.put("userCate", cateResult);
+                }
+                long totalCalledNum = (long) pageData.get("totalCalledNum");
+                long totalUnConnectNum = (long) pageData.get("totalUnConnectNum");
+                long totalhasIntentionNum = (long) pageData.get("totalhasIntentionNum");
+                long totalNothasIntentionNum = (long) pageData.get("totalNothasIntentionNum");
+                long totalConnectNum = totalCalledNum - totalUnConnectNum;
+                long totalNum = totalNothasIntentionNum + totalhasIntentionNum;
+                float successRate = totalCalledNum == 0 ? 0 : new BigDecimal(totalConnectNum).divide(new BigDecimal(totalCalledNum)).floatValue() * 100;
+                float intentRate = totalNum == 0 ? 0 : new BigDecimal(totalhasIntentionNum).divide(new BigDecimal(totalNum)).floatValue() * 100;
+                pageData.put("successRate", FloatUtil.interceptFloatValue(successRate, 2));
+                pageData.put("intentRate", FloatUtil.interceptFloatValue(intentRate, 2));
+                object.put("data", pageData);
+            } else if (cmd.equals("taskDetailPage")) {
+                Integer pageIndex;
+                Integer pageSize;
+                List<PageData> list;
+                pd.putAll(json);
+                pageIndex = json.getInteger("pageIndex");
+                page.setCurrentPage(pageIndex);
+                pageSize = json.getInteger("pageSize");
+                page.setShowCount(pageSize);
+                page.setPd(pd);
+                list = outerCallTaskManager.taskDetailPage(page);
+                if (list.size() > 0) {
+                    object.put("success", "true");
+                    object.put("data", list);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                } else {
+                    object.put("success", "false");
+                    object.put("msg", "暂无数据");
+                }
+            } else if (cmd.equals("taskAnalysisData")) {
+                PageData intentPageData = outerCallTaskManager.taskIntentAnalysisData(pd);
+                List<PageData> namePageData = outerCallTaskManager.taskNameAnalysisData(pd);
+                object.put("intentPageData", intentPageData);
+                object.put("namePageData", namePageData);
+            } else if (cmd.equals("intentUserPage")) {
+                Integer pageIndex;
+                Integer pageSize;
+                List<PageData> list;
+                pageIndex = json.getInteger("pageIndex");
+                page.setCurrentPage(pageIndex);
+                pageSize = json.getInteger("pageSize");
+                page.setShowCount(pageSize);
+                page.setPd(pd);
+                list = outerCallTaskManager.intentUserPage(page);
+                if (list.size() > 0) {
+                    object.put("success", "true");
+                    object.put("data", list);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                } else {
+                    object.put("success", "false");
+                    object.put("msg", "暂无数据");
+                }
+            }
+        } else {
+            object.put("success", "false");
+            object.put("msg", "登录超时，请重新登录");
+        }
+        return object;
+    }
+}

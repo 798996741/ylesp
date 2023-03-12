@@ -1,0 +1,13 @@
+package com.yulun.service;
+
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+
+import java.util.List;
+
+public interface DataStatManager {
+    public List<PageData> usertotal(PageData pd)throws Exception;
+    public List<PageData> servtotal(PageData pd)throws Exception;
+    public List<PageData> getjob(PageData pd)throws Exception;
+    public List<PageData> getemploy(PageData pd)throws Exception;
+}

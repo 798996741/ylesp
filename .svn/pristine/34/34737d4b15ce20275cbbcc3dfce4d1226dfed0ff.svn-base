@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PersonMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		tesp_person
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		uid,
+		sex,
+		name,
+		addr,
+		email,
+		tel,
+		lxtel,
+		age,
+		jg,
+		czman,
+		czdate,
+		isjob,
+		xl,
+		zy,
+		cardid,
+		cate,
+		isinsuran,
+		bylxtel,
+		bylxr,
+		qzqd,
+		location
+
+				
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{uid},
+		#{sex},
+		#{name},
+		#{addr},
+		#{email},
+		#{tel},
+		#{lxtel},
+		#{age},
+		#{jg},
+		#{czman},
+		now(),
+		#{isjob},
+		#{xl},
+		#{zy},
+		#{cardid},
+		#{cate},
+		#{isinsuran},
+		#{bylxtel},
+		#{bylxr},
+		#{qzqd},
+		#{location}
+	</sql>
+	
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	
+	<!-- 批量删除 -->
+	<update id="deleteAll" parameterType="String">
+		delete from 
+			<include refid="tableName"></include>
+		where 
+			find_in_set(uid,#{uid})
+	</update>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			sex=#{sex},
+			name=#{name},
+			addr=#{addr},
+			email=#{email},
+			tel=#{tel},
+			lxtel=#{lxtel},
+			age=#{age},
+			jg=#{jg},
+			isjob=#{isjob},
+			xl=#{xl},
+			zy=#{zy},
+			cardid=#{cardid},
+			czman=#{czman},
+			czdate=now(),
+			isimpot='',
+			cate=#{cate},
+			isinsuran=#{isinsuran},
+			bylxtel=#{bylxtel},
+			bylxr=#{bylxr},
+			qzqd=#{qzqd},
+			location=#{location}
+		where
+		uid = #{uid}
+	</update>
+	
+	
+	
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select 
+			a.uid,
+			a.sex,
+			a.name,
+			a.addr,
+			a.email,
+			a.tel,
+			a.lxtel,
+			a.age,
+			a.jg,
+			a.czman,
+			a.isjob,
+			a.xl,
+			a.zy,
+			a.cardid,
+			a.isinsuran,
+			a.bylxtel,
+			a.bylxr,
+			a.qzqd,
+			a.location,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as xlname,
+			c.zxxm as czname,
+			a.cate,
+			d.name as catename,
+		IFNULL((SELECT (CASE WHEN re.result='0' THEN '未回访' WHEN re.result IS NULL THEN '未回访' WHEN re.result='1' THEN '已回访' ELSE '未回访' END )
+		FROM tesp_revrecord re WHERE re.uid IS NOT NULL  AND a.uid=re.uid ORDER BY re.cztime DESC LIMIT 0,1),'未回访') resultname
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.xl=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join sys_dictionaries d on a.cate=d.DICTIONARIES_ID
+		where 1=1
+		
+		<if test="pd.tel!= null and pd.tel != ''"><!-- 关键词检索 -->
+			and
+				(
+					a.tel LIKE CONCAT(CONCAT('%', #{pd.tel}),'%')
+					or a.lxtel LIKE CONCAT(CONCAT('%', #{pd.tel}),'%')
+				)
+		</if>
+		
+		<if test="pd.lxtel!= null and pd.lxtel != ''"><!-- 关键词检索 -->
+			and
+				(
+					a.tel LIKE CONCAT(CONCAT('%', #{pd.lxtel}),'%')
+					or a.lxtel LIKE CONCAT(CONCAT('%', #{pd.lxtel}),'%')
+				)
+		</if>
+		
+		<if test="pd.xl!= null and pd.xl != ''"><!-- 关键词检索 -->
+			and  a.xl = #{pd.xl} 
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!=''"><!-- 开始时间检索 -->
+			and a.czdate &gt;= #{pd.starttime} 
+		</if>
+		<if test="pd.endtime!=null and pd.endtime!=''"><!-- 结束时间检索 -->
+			and a.czdate &lt;= #{pd.endtime} 
+		</if>
+		<if test="pd.name!= null and pd.name!= ''">
+			and a.name LIKE CONCAT(CONCAT('%', #{pd.name}),'%')
+		</if>
+		<if test="pd.cardid!= null and pd.cardid!= ''">
+			and a.cardid LIKE CONCAT(CONCAT('%', #{pd.cardid}),'%')
+		</if>
+		
+		order by a.czdate desc	
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByuid" parameterType="pd" resultType="pd">
+		select 
+			a.uid,
+			a.sex,
+			a.name,
+			a.addr,
+			a.email,
+			a.tel,
+			a.lxtel,
+			a.age,
+			a.jg,
+			a.czman,
+			a.isjob,
+			a.xl,
+			a.zy,
+			a.cardid,
+			a.isinsuran,
+			a.bylxtel,
+			a.bylxr,
+			a.isinsuran,
+			a.location,
+			a.qzqd,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as xlname,
+			c.zxxm as czname,
+			a.cate,
+			d.name as catename,
+		IFNULL((SELECT (CASE WHEN re.result='0' THEN '未回访' WHEN re.result IS NULL THEN '未回访' WHEN re.result='1' THEN '已回访' ELSE '未回访' END )
+		FROM tesp_revrecord re WHERE re.uid IS NOT NULL  AND a.uid=re.uid ORDER BY re.cztime DESC LIMIT 0,1),'未回访') resultname
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.xl=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join sys_dictionaries d on a.cate=d.DICTIONARIES_ID
+		where 1=1
+			and a.uid = #{uid}
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByTel" parameterType="pd" resultType="pd">
+		select 
+			a.uid,
+			a.sex,
+			a.name,
+			a.addr,
+			a.email,
+			a.tel,
+			a.lxtel,
+			a.age,
+			a.jg,
+			a.czman,
+			a.isjob,
+			a.xl,
+			a.zy,
+			a.cardid,
+			a.isinsuran,
+			a.bylxtel,
+			a.bylxr,
+			a.qzqd,
+			a.location,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as xlname,
+			c.zxxm as czname,
+			a.cate,
+			d.name as catename
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.xl=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join sys_dictionaries d on a.cate=d.DICTIONARIES_ID
+		where 1=1 and (a.tel = #{tel} or a.lxtel = #{tel} or a.bylxtel = #{tel})
+		order by  a.czdate desc limit 0,1
+	</select>
+	
+	<!-- 351412933 -->
+
+
+	<select id="findDicByParentidlistPage" parameterType="page" resultType="pd">
+		SELECT d.name,d.DICTIONARIES_ID FROM sys_dictionaries d  WHERE 1 = 1
+		<if test="pd.parentid != null and pd.parentid != '' ">
+			and parent_id = #{pd.parentid}
+		</if>
+	</select>
+
+</mapper>

@@ -1,0 +1,248 @@
+package com.yulun.controller.consumer;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.ConsumerManager;
+import com.yulun.service.JobReferManager;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+public class JobReferWeb implements CommonIntefate {
+
+    @Resource(name = "jobReferService")
+    private JobReferManager jobReferManager;
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object=new JSONObject();
+//        try {
+            PageData pd = new PageData();
+            Page page = new Page();
+            String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+            PageData pd_stoken = new PageData();
+            JSONObject json = data.getJSONObject("data");
+            pd_stoken.put("TOKENID", json.get("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (cmd.equals("recruitlist")) {
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("name",json.getString("name"));
+                    pd.put("jobname",json.getString("jobname"));
+                    pd.put("jobtype",json.getString("jobtype"));
+                    pd.put("gzdy",json.getString("gzdy"));
+                    pd.put("keywords",json.getString("keywords"));
+                    page.setPd(pd);
+                    List<PageData> list = jobReferManager.recruitlistPage(page);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("getjoblis")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("name",json.getString("name"));
+                    String age = json.getString("age");
+                    String[] split = age.split("-");
+                    pd.put("agestart",split[0]);
+                    pd.put("ageend",split[1]);
+                    pd.put("sex",json.getString("sex"));
+                    pd.put("xl",json.getString("xl"));
+                    pd.put("isjob",json.getString("isjob"));
+                    pd.put("jobtype",json.getString("jobtype"));
+                    pd.put("jobname",json.getString("jobname"));
+                    pd.put("qwxz",json.getString("qwxz"));
+                    page.setPd(pd);
+                    List<PageData> list = jobReferManager.getjoblistPage(page);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("insertperson")){
+                    String uuid32 = getUUID32();
+                    pd.put("uid",uuid32);
+                    pd.put("sex",json.getString("sex"));
+                    pd.put("name",json.getString("name"));
+                    pd.put("addr",json.getString("addr"));
+                    pd.put("email",json.getString("email"));
+                    pd.put("tel",json.getString("tel"));
+                    pd.put("lxtel",json.getString("lxtel"));
+                    pd.put("age",json.getString("age"));
+                    pd.put("jg",json.getString("jg"));
+                    pd.put("czman",json.getString("czman"));
+                    pd.put("czdate",getTime());
+                    pd.put("isjob",json.getString("isjob"));
+                    pd.put("xl",json.getString("xl"));
+                    pd.put("zy",json.getString("zy"));
+                    pd.put("cardid",json.getString("cardid"));
+                    jobReferManager.insertperson(pd);
+                    object.put("success","true");
+                    object.put("uid",uuid32);
+                }else if (cmd.equals("updateperson")){
+                    pd.put("id",json.getString("id"));
+                    pd.put("uid",json.getString("uid"));
+                    pd.put("sex",json.getString("sex"));
+                    pd.put("name",json.getString("name"));
+                    pd.put("addr",json.getString("addr"));
+                    pd.put("email",json.getString("email"));
+                    pd.put("tel",json.getString("tel"));
+                    pd.put("lxtel",json.getString("lxtel"));
+                    pd.put("age",json.getString("age"));
+                    pd.put("jg",json.getString("jg"));
+                    pd.put("czman",json.getString("czman"));
+                    pd.put("czdate",getTime());
+                    pd.put("isjob",json.getString("isjob"));
+                    pd.put("xl",json.getString("xl"));
+                    pd.put("zy",json.getString("zy"));
+                    pd.put("cardid",json.getString("cardid"));
+                    jobReferManager.updateperson(pd);
+                    object.put("success","true");
+                }else if (cmd.equals("deleteperson")){
+                    pd.put("id",json.getString("id"));
+                    jobReferManager.deleteperson(pd);
+                    object.put("success","true");
+                }else if (cmd.equals("joblist")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("id",json.getString("id"));
+                    pd.put("uid",json.getString("uid"));
+                    page.setPd(pd);
+                    List<PageData> list = jobReferManager.findjoblistPage(page);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("insertjobreg")){
+                    pd.put("jobname",json.getString("jobname"));
+                    pd.put("jobtype",json.getString("jobtype"));
+                    pd.put("qwxz",json.getString("qwxz"));
+                    pd.put("jobaddr",json.getString("jobaddr"));
+                    pd.put("remark",json.getString("remark"));
+                    pd.put("czman",json.getString("czman"));
+
+                    pd.put("uid",json.getString("uid"));
+                    pd.put("czdate",getTime());
+                    pd.put("isvalid",json.getString("isvalid"));
+                    jobReferManager.insertjobreg(pd);
+                    object.put("success","true");
+                }else if (cmd.equals("updatejobreg")){
+                    pd.put("id",json.getString("id"));
+                    pd.put("jobname",json.getString("jobname"));
+                    pd.put("jobtype",json.getString("jobtype"));
+                    pd.put("qwxz",json.getString("qwxz"));
+                    pd.put("jobaddr",json.getString("jobaddr"));
+                    pd.put("remark",json.getString("remark"));
+                    pd.put("czman",json.getString("czman"));
+                    pd.put("uid",json.getString("uid"));
+                    pd.put("czdate",getTime());
+                    pd.put("isvalid",json.getString("isvalid"));
+                    jobReferManager.updatejobreg(pd);
+                    object.put("success","true");
+                }else if (cmd.equals("deletejobreg")){
+                    pd.put("id",json.getString("id"));
+                    jobReferManager.deletejobreg(pd);
+                    object.put("success","true");
+                }else if (cmd.equals("Jobrefer")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("uid",json.getString("uid"));
+                    page.setPd(pd);
+                    List<PageData> list = jobReferManager.JobreferlistPage(page);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("Personrefer")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("uid",json.getString("uid"));
+                    page.setPd(pd);
+                    List<PageData> list = jobReferManager.PersonreferlistPage(page);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("findaddrlist")){
+                    Integer pageIndex = json.getInteger("pageIndex");
+                    page.setCurrentPage(pageIndex);
+                    Integer pageSize = json.getInteger("pageSize");
+                    page.setShowCount(pageSize);
+                    pd.put("office",json.getString("office"));
+                    pd.put("keywords",json.getString("keywords"));
+                    page.setPd(pd);
+                    List<PageData> list = jobReferManager.findaddrlistPage(page);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                    object.put("data",list);
+                    object.put("success","true");
+                }else if (cmd.equals("insertaddr")){
+                    pd.put("office",json.getString("office"));
+                    pd.put("duty",json.getString("duty"));
+                    pd.put("name",json.getString("name"));
+                    pd.put("tel1",json.getString("tel1"));
+                    pd.put("tel2",json.getString("tel2"));
+                    jobReferManager.insertaddr(pd);
+                    object.put("success","true");
+                }else if (cmd.equals("updateaddr")){
+                    pd.put("id",json.getString("id"));
+                    pd.put("office",json.getString("office"));
+                    pd.put("duty",json.getString("duty"));
+                    pd.put("name",json.getString("name"));
+                    pd.put("tel1",json.getString("tel1"));
+                    pd.put("tel2",json.getString("tel2"));
+                    jobReferManager.updateaddr(pd);
+                    object.put("success","true");
+                }else if (cmd.equals("deleteaddr")){
+                    pd.put("id",json.getString("id"));
+                    jobReferManager.deleteaddr(pd);
+                    object.put("success","true");
+                }
+            } else {
+                object.put("success", "false");
+                object.put("msg", "登录超时，请重新登录");
+            }
+//        }catch (Exception e) {
+//            object.put("success", "false");
+//            object.put("msg", "异常");
+//        }
+        return object;
+    }
+
+    public String getTime() {
+        Date date = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(date);
+    }
+
+    public String getUUID32() {
+        String uuid = UUID.randomUUID().toString();
+        uuid = uuid.replace("-", "");
+        return uuid;
+    }
+}

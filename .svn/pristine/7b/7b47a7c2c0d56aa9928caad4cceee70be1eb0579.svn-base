@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="otherServiceMapper">
+    <sql id="table">
+        `tesp_qtfw`
+    </sql>
+    <select id="findAlllistPage" resultType="pd"  parameterType="page">
+        SELECT q.uid, DATE_FORMAT(q.czdate, "%Y-%m-%d %T") AS `czdate`, q.fwname
+        , (
+        SELECT `name`
+        FROM sys_dictionaries
+        WHERE dictionaries_id = q.fwtype
+        ) AS fwtypename, q.fwtype, q.isjd
+        , IF(q.type = 1, (
+        SELECT `name`
+        FROM tesp_company c
+        WHERE q.uid = c.uid
+        ), (
+        SELECT `name`
+        FROM tesp_person p
+        WHERE q.uid = p.uid
+        )) AS `name`
+        , q.type,q.remark
+        FROM tesp_qtfw q where 1=1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and  `czdate` &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and `czdate` &lt;  #{pd.endTime}
+        </if>
+        <if test="pd.fwname != null and pd.fwname != ''">
+            and `fwname` like  CONCAT('%',#{pd.fwname},'%')
+        </if>
+        <if test="pd.isjd != null and pd.isjd != ''">
+            and `isjd` =#{pd.isjd}
+        </if>
+        <if test="pd.fwtype != null and pd.fwtype != ''">
+            and `fwtype` = #{pd.fwtype}
+        </if>
+        <if test="pd.name != null and pd.name != ''">
+            and IF(q.type = 1, (
+            SELECT `name`
+            FROM tesp_company c
+            WHERE q.uid = c.uid
+            ), (
+            SELECT `name`
+            FROM tesp_person p
+            WHERE q.uid = p.uid
+            )) like  CONCAT('%',#{pd.name},'%')
+        </if>
+        <if test="pd.type != null and pd.type != ''">
+            and `type` like CONCAT('%',#{pd.type},'%')
+        </if>
+        <if test="pd.uid != null and pd.uid != ''">
+            and `uid` = #{pd.uid}
+        </if>
+        <if test="pd.keywords != null and pd.keywords != ''">
+            and IF(q.type = 1, (
+            SELECT `name`
+            FROM tesp_company c
+            WHERE q.uid = c.uid
+            ), (
+            SELECT `name`
+            FROM tesp_person p
+            WHERE q.uid = p.uid
+            )) like  CONCAT('%',#{pd.keywords},'%')
+        </if>
+        order by czdate desc
+    </select>
+
+
+</mapper>
+
+
+

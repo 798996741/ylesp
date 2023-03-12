@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="otherPersonMapper">
+    <sql id="Field">
+    id`,
+	`uid`,
+	`name`,
+	`czdate`,
+	`sex`,
+	`cardid`,
+	`isjob`,
+	`tel`,
+	`cate`
+    </sql>
+    <sql id="value">
+     null,
+     #{uid},
+	 #{name},
+	 #{czdate},
+	 #{sex},
+	 #{cardid},
+	 #{isjob},
+	 #{tel},
+	 #{cate}
+    </sql>
+    <sql id="table">
+        `tesp_OtherPerson`
+    </sql>
+
+<!--    根据条件查询所有其他人员     -->
+    <select id="findAlllistPage" resultType="pd"  parameterType="page" >
+        select <include refid="Field" /> from <include refid="table"/> where 1 = 1
+        <if test="pd.startTime != null and pd.endTime != null">
+            and czdate BETWEEN #{pd.startTime} AND #{pd.endTime}
+        </if>
+        <if test="pd.isjob != null and pd.isjob != ''">
+            and isjob  = #{pd.isjob}
+        </if>
+    </select>
+<!--    根据ID或者UID查询-->
+    <select id="findbyIdUid" resultType="pd"  parameterType="page" >
+        select <include refid="Field" /> from <include refid="table"/> where 1 = 1
+        <if test="Id != null and Id != ''">
+            and id = #{Id}
+        </if>
+        <if test="Uid != null and Uid != ''">
+            and Uid = #{Uid}
+        </if>
+    </select>
+
+</mapper>

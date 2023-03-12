@@ -1,0 +1,185 @@
+package com.yulun.controller.count;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.PersonCountManager;
+import com.yulun.utils.TimeHandle;
+
+import javax.annotation.Resource;
+import javax.naming.ldap.PagedResultsControl;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
+
+/** @Author Aliar @Time 2020-05-19 20:49 */
+public class PersonCountWeb implements CommonIntefate {
+  static final String SUCCESS = "success";
+  static final String MSG = "msg";
+  static final String FALSE = "false";
+  static final String TRUE = "true";
+  Integer pageIndex;
+  Integer pageSize;
+
+  @Resource(name = "zxlbService")
+  private ZxlbManager zxlbService;
+
+  @Resource(name = "personCountService")
+  private PersonCountManager personCountService;
+
+  @Override
+  public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+    JSONObject object = new JSONObject();
+    PageData pd = new PageData();
+    String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+    PageData pd_stoken = new PageData();
+    JSONObject json = data.getJSONObject("data");
+    pd_stoken.put("TOKENID", json.get("tokenid"));
+    try {
+      PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+      if (null == pd_token) {
+        json.put(SUCCESS, FALSE);
+        json.put(MSG, "请重新登陆");
+        return object;
+      }
+
+      if ("personCount".equals(cmd)) {
+        String startTime = json.getString("startTime");
+        String endTime = json.getString("endTime");
+        String timeSlot = json.getString("timeSlot");
+        // 判空  等于1才能正常运行
+        double isNull = 0d;
+        if (timeSlot != null && !"".equals(timeSlot)) {
+          isNull += 1d;
+        }
+        if (startTime != null && !"".equals(startTime)) {
+          isNull += 0.5d;
+        }
+        if (endTime != null && !"".equals(endTime)) {
+          isNull += 0.5d;
+        }
+        Page page = new Page();
+        page.setShowCount(50);
+        page.setCurrentPage(1);
+        if (isNull < 1d) {
+          object.put(SUCCESS, FALSE);
+          object.put(MSG, "StartTime and endTime or timeSolt is NULL");
+          return object;
+        } else if (isNull == 2d || isNull == 1.5d) {
+          object.put(SUCCESS, FALSE);
+          object.put(MSG, "StartTime and endTime and timeSolt Can't together");
+          return object;
+        }
+        // 传值
+        if (timeSlot == null || "".equals(timeSlot)) {
+          pd.put("startTime", startTime);
+          pd.put("endTime", endTime);
+        } else {
+          Map<String, String> time = TimeHandle.getCountTime(timeSlot);
+          String msg = time.get("msg");
+          if (msg != null && !"".equals(msg)) {
+            object.put(MSG, msg);
+            object.put(SUCCESS, FALSE);
+            return object;
+          }
+          startTime = time.get("startTime");
+          endTime = time.get("endTime");
+          pd.put("startTime", startTime);
+          pd.put("endTime", endTime);
+        }
+        // 求职人员总数：
+        PageData jobregCount = personCountService.jobregCount(pd);
+        pd.putAll(jobregCount);
+        // 就业推荐总数：
+        PageData recruitCount = personCountService.recruitCount(pd);
+        pd.putAll(recruitCount);
+        // 性别统计:
+        List<PageData> sexCount = personCountService.sexCount(page);
+        PageData sexPd = new PageData();
+        sexPd.put("men","0");
+        sexPd.put("woman","0");
+        for (PageData pageData : sexCount) {
+          String sex = pageData.getString("sex");
+          String count = pageData.get("sexCount").toString();
+          if(sex != null && !"".equals(sex) && count != null && !"".equals(count)) {
+            sexPd.put(sex, count);
+          }
+        }
+        pd.put("sexCount",sexPd);
+        // 年龄分段统计:
+        List<PageData> ageCount = personCountService.ageCount(page);
+        PageData agePd = new PageData();
+        agePd.put("16to30Years","0");
+        agePd.put("30to45Years","0");
+        agePd.put("45to55Years","0");
+        agePd.put("over55YearsOld","0");
+        for (PageData pageData : ageCount) {
+          String age = pageData.getString("age");
+          String count = pageData.get("ageCount").toString();
+          if(age != null && !"".equals(age) && count != null && !"".equals(count)) {
+            agePd.put(age, count);
+          }
+        }
+        pd.put("ageCount",agePd);
+        // 学历统计：
+        List<PageData> xlCount = personCountService.xlCount(page);
+        PageData xlPd = new PageData();
+        xlPd.put("juniorMiddleCount","0");
+        xlPd.put("highSchoolCount","0");
+        xlPd.put("juniorCollegeCount","0");
+        xlPd.put("undergraduateCount","0");
+        xlPd.put("graduateStudentCount","0");
+        for (PageData pageData : xlCount) {
+          String xl = pageData.getString("xl");
+          String count = pageData.get("xlCount").toString();
+          if(xl != null && !"".equals(xl) && count != null && !"".equals(count)) {
+            xlPd.put(xl, count);
+          }
+        }
+        pd.put("xlCount", xlPd);
+        // 岗位分布：
+        List<PageData> jobCount = personCountService.jobCount(page);
+        pd.put("jobCount", jobCount);
+        //新增人数:求职人员总数 就业推荐总数
+        PageData npd = new PageData();
+        npd.put("endTime",TimeHandle.getTodayTime());
+        PageData jobregTodayCount = personCountService.jobregCount(npd);
+        PageData recruitTodayCount = personCountService.recruitCount(npd);
+        npd.put("endTime",TimeHandle.getYesterdayTime());
+        PageData recruitYesterdayCount = personCountService.recruitCount(npd);
+        PageData jobregYesterdayCount = personCountService.jobregCount(npd);
+        String joregCountOld = jobregYesterdayCount.get("joregCount").toString();
+        String joregCountNew= jobregTodayCount.get("joregCount").toString();
+        Integer jobregChange = 0;
+        if(jobCount != null && !"".equals(jobCount) && joregCountNew != null && !"".equals(joregCountNew)) {
+          jobregChange =
+                  Integer.valueOf(joregCountNew) -
+                          Integer.valueOf(joregCountOld);
+        }
+        pd.put("jobregChange",jobregChange);
+
+        String recruitCountOld = recruitYesterdayCount.get("recruitCount").toString();
+        String recruitCountNew= recruitTodayCount.get("recruitCount").toString();
+        Integer recruitChange = 0;
+        if(recruitCountOld != null && !"".equals(recruitCountOld) && recruitCountNew != null && !"".equals(recruitCountNew)) {
+          recruitChange =
+                  Integer.valueOf(recruitTodayCount.get("recruitCount").toString()) -
+                          Integer.valueOf(recruitYesterdayCount.get("recruitCount").toString());
+        }
+        pd.put("recruitChange",recruitChange);
+       object.put("data",pd);
+
+      }
+
+    } catch (Exception e) {
+      object.put(SUCCESS, FALSE);
+      object.put(MSG, "数据异常");
+
+    } finally {
+      return object;
+    }
+
+  }
+}

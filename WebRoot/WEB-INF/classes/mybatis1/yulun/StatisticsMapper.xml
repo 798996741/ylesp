@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="StatisticsMapper">
+
+    <select id="zxCallNumCount" resultType="pd" parameterType="pd">
+		SELECT COUNT(id) callnum,IFNULL(zxid,#{zxid}) zxid
+		FROM tthjl WHERE 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="thfx != null and thfx != ''">
+			and thfx=#{thfx}
+		</if>
+		<if test="inmark != null and inmark != ''">
+			and LENGTH(zjhm) &lt; 10
+		</if>
+		<if test="zxid != null and zxid != ''">
+			and zxid = #{zxid}
+		</if>
+		<if test="zxid == null or zxid == ''">
+			GROUP BY zxid
+		</if>
+
+	</select>
+
+	<select id="zxCallNumSum" resultType="pd" parameterType="pd">
+		SELECT SUM(thsj) thnum,zxid
+		FROM tthjl_zxjtls WHERE 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="thfx != null and thfx != ''">
+			and thfx=#{thfx}
+		</if>
+		<if test="inmark != null and inmark != ''">
+			and LENGTH(fjhm) &lt; 10
+		</if>
+		<if test="zxid != null and zxid != ''">
+			and zxid = #{zxid}
+		</if>
+		<if test="zxid == null or zxid == ''">
+			GROUP BY zxid
+		</if>
+	</select>
+
+	<select id="getxzid" resultType="pd" parameterType="pd">
+		select distinct(zxid) from tzxlb where 1=1
+		<if test="zxid != null and zxid != ''">
+			and zxid = #{zxid}
+		</if>
+	</select>
+	
+	<select id="getcgjtl" parameterType="pd" resultType="pd">
+		select COUNT(a.id) cgjtl,a.zxid from tthjl a,tthjl_zxjtls b where 1=1
+		<if test="zxid != null and zxid != ''">
+			and a.zxid = #{zxid}
+		</if>
+		<if test="zxid == null or zxid == ''">
+			GROUP BY a.zxid
+		</if>
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+	</select>
+
+	<select id="getxlfql" parameterType="pd" resultType="pd">
+		select COUNT(id) xlfql,zxid from tthjl
+		<if test="zxid != null and zxid != ''">
+			and zxid = #{zxid}
+		</if>
+		<if test="zxid == null or zxid == ''">
+			GROUP BY zxid
+		</if>
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and kssj BETWEEN #{starttime} and #{endtime}
+		</if>
+	</select>
+
+	<select id="getuser" parameterType="pd" resultType="pd">
+		select zxid,zxxm from tzxlb
+	</select>
+
+
+	<select id="zxopeloglistPage" parameterType="page" resultType="pd">
+		SELECT b.id,b.zx,DATE_FORMAT(b.fssj,'%Y-%m-%d %H:%i:%s') as fssj,b.note,b.czxm,a.zxxm FROM tzxlb a,tzxczrz b WHERE b.zx=a.zxid
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zx = #{pd.zxid}
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and fssj BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+	</select>
+
+	<select id="zxcallloglistPage" parameterType="page" resultType="pd">
+		SELECT d.id,
+		d.bcsj,
+		d.bjhm,
+		d.ddsj,
+		d.fwsj,
+		d.gjyy,
+		d.thlx,
+		d.fwzt,
+		d.hwlsh,
+		d.jnid,
+		DATE_FORMAT(d.jssj,'%Y-%m-%d %H:%i:%s') as jssj,
+		d.khpj,
+		DATE_FORMAT(d.kssj,'%Y-%m-%d %H:%i:%s') as kssj,
+		d.rq,
+		d.shclsj,
+		d.thsj,
+		d.ucid,
+		d.zjdh,
+		d.zjhm,
+		d.zxid,
+		d.yzzt,
+		d.khh,
+		d.thfx,
+		d.hdhm,
+		d.hdxm,
+		d.zxxm,
+		c.lywj FROM trecord c RIGHT JOIN (SELECT a.*,b.zxxm FROM tthjl a,tzxlb b WHERE a.zxid=b.zxid) d ON c.ucid=d.ucid where 1=1
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and d.zxid = #{pd.zxid}
+		</if>
+		<if test="pd.zjhm != null and pd.zjhm != ''">
+			and d.zjhm = #{pd.zjhm}
+		</if>
+		<if test="pd.thfx != null and pd.thfx != ''">
+			and d.thfx = #{pd.thfx}
+		</if>
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and d.kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+	</select>
+
+	<select id="ZXHWTJlistPage" resultType="pd" parameterType="Page">
+		SELECT a.zxxm,a.zxid,
+		IFNULL (zxhrl,0) zxhrl,
+		IFNULL (zxhrjts,0) zxhrjts,
+		IFNULL (zxwmdhs,0) zxwmdhs,
+		IFNULL (zxhrzsc,0) zxhrzsc,
+		IFNULL (zxwhs,0) zxwhs,
+		IFNULL (zxwhjts,0) zxwhjts,
+		IFNULL (zxthsc,0) zxthsc,
+		IFNULL (zxpjthsc,0) zxpjthsc,
+		IFNULL (zxshcls,0) zxshcls,
+		IFNULL (zxpjshsc,0) zxpjshsc,
+		IFNULL (zxpjbcsc,0) zxpjbcsc,
+		IFNULL (zxbcs,0) zxbcs,
+		IFNULL (zxhbcsc,0) zxhbcsc,
+		IFNULL (zxgzzsc,0) zxgzzsc,
+		IFNULL (zxshsc,0) zxshsc
+		FROM
+		(SELECT zxid,zxxm FROM tzxlb) a
+		LEFT JOIN (SELECT COUNT(id) zxhrl,zxid,kssj FROM tthjl WHERE thfx='0'
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) b ON a.zxid=b.zxid
+		LEFT JOIN (SELECT COUNT(id) zxhrjts,zxid,kssj FROM tthjl WHERE thfx='0' AND fwsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) c ON a.zxid=c.zxid
+		LEFT JOIN (SELECT COUNT(id) zxwmdhs,zxid FROM tthjl WHERE thfx='0' AND fwsj &lt;= 5 AND fwsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) d ON a.zxid=d.zxid
+		LEFT JOIN (SELECT SUM(fwsj) zxhrzsc,zxid FROM tthjl WHERE thfx='0'
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) e ON a.zxid=e.zxid
+		LEFT JOIN (SELECT COUNT(id) zxwhs,zxid FROM tthjl WHERE thfx='1'
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) f ON a.zxid=f.zxid
+		LEFT JOIN (SELECT COUNT(id) zxwhjts,zxid FROM tthjl WHERE thfx='1' AND fwsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) g ON a.zxid=g.zxid
+		LEFT JOIN (SELECT SUM(fwsj) zxthsc,zxid FROM tthjl WHERE thfx='1'
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) h ON a.zxid=h.zxid
+		LEFT JOIN (SELECT AVG(fwsj) zxpjthsc,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) i ON a.zxid=i.zxid
+		LEFT JOIN (SELECT COUNT(id) zxshcls,zxid FROM tthjl WHERE shclsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) j ON a.zxid=j.zxid
+		LEFT JOIN (SELECT AVG(shclsj) zxpjshsc,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) k ON a.zxid=k.zxid
+		LEFT JOIN (SELECT AVG(bcsj) zxpjbcsc,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) l ON a.zxid=l.zxid
+		LEFT JOIN (SELECT COUNT(id) zxbcs,zxid FROM tthjl WHERE bcsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) n ON a.zxid=n.zxid
+		LEFT JOIN (SELECT SUM(bcsj) zxhbcsc,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) m ON a.zxid=m.zxid
+		LEFT JOIN (SELECT SUM(thsj+shclsj) zxgzzsc,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) o ON a.zxid=o.zxid
+		LEFT JOIN (SELECT SUM(shclsj) zxshsc,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		GROUP BY zxid) p ON a.zxid=p.zxid
+	</select>
+
+	<select id="timeZXHWTJlistPage" parameterType="Page" resultType="pd">
+		SELECT
+		<if test="pd.way=='day'">
+			DAY(a.kssj) AS time,
+		</if>
+		<if test="pd.way=='month'">
+			MONTH(a.kssj) AS time,
+		</if>
+		<if test="pd.way=='year'">
+			YEAR(a.kssj) AS time,
+		</if>
+		<if test="pd.way=='week'">
+			WEEK(a.kssj) AS time,
+		</if>
+		IFNULL(COUNT(b.id),0) zxhrl ,
+		IFNULL(COUNT(c.id),0) zxhrjts,
+		IFNULL(COUNT(d.id),0) zxwmdhs,
+		IFNULL(SUM(e.fwsj),0) zxhrzsc,
+		IFNULL(COUNT(f.id),0) zxwhs,
+		IFNULL(COUNT(g.id),0) zxwhjts,
+		IFNULL(SUM(h.fwsj),0) zxthsc,
+		IFNULL(AVG(i.fwsj),0) zxpjthsc,
+		IFNULL(COUNT(j.id),0) zxshcls,
+		IFNULL(AVG(k.shclsj),0) zxpjshsc,
+		IFNULL(AVG(l.bcsj),0) zxpjbcsc,
+		IFNULL(COUNT(n.id),0) zxbcs,
+		IFNULL(SUM(m.bcsj),0) zxhbcsc,
+		IFNULL(SUM(o.thsj+o.shclsj),0) zxgzzsc,
+		IFNULL(SUM(p.shclsj),0) zxshsc
+		FROM (SELECT kssj FROM tthjl WHERE 1=1 ) a
+		LEFT JOIN (SELECT * FROM tthjl WHERE thfx='0'
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) b ON a.kssj=b.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE thfx='0' AND fwsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) c ON a.kssj=c.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE thfx='0' AND fwsj &lt;= 5 AND fwsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) d ON a.kssj=d.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE thfx='0' AND fwsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) e ON a.kssj=e.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE thfx='1'
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) f ON a.kssj=f.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE thfx='1' AND fwsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) g ON a.kssj=g.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE thfx='1'
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) h ON a.kssj=h.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) i ON a.kssj=i.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE shclsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) j ON a.kssj=j.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) k ON a.kssj=k.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) l ON a.kssj=l.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE bcsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) n ON a.kssj=n.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) m ON a.kssj=m.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) o ON a.kssj=o.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.zxid != null and pd.zxid != ''">
+			and zxid=#{pd.zxid}
+		</if>
+		) p ON a.kssj=p.kssj
+		GROUP BY TIME
+	</select>
+
+
+	<select id="MYDTJlistPage" resultType="pd" parameterType="page">
+		SELECT a.zxxm,a.zxid,
+		IFNULL(b.cpl,0) cpl,
+		IFNULL(c.fcmy,0) fcmy,
+		IFNULL(d.cpfcmyl,0) cpfcmyl,
+		IFNULL(e.ztfcmyl,0) ztfcmyl,
+		IFNULL(f.my,0) my,
+		IFNULL(g.cpmyl,0) cpmyl,
+		IFNULL(h.ztmyl,0) ztmyl,
+		IFNULL(i.bmy,0) bmy,
+		IFNULL(j.wpj,0) wpj,
+		IFNULL(k.zj,0) zj
+		FROM
+		(SELECT zxid,zxxm FROM tzxlb) a
+		LEFT JOIN (SELECT COUNT(khpj)/COUNT(id) cpl,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) b ON a.zxid=b.zxid
+		LEFT JOIN (SELECT COUNT(id) fcmy,zxid FROM tthjl WHERE khpj=5
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) c ON a.zxid=c.zxid
+		LEFT JOIN (SELECT cnum/COUNT(a.id) cpfcmyl,a.zxid FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=5 GROUP BY zxid) b WHERE b.zxid=a.zxid AND khpj IS NOT NULL
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) d ON a.zxid=d.zxid
+		LEFT JOIN (SELECT cnum/COUNT(a.id) ztfcmyl,a.zxid FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=5 GROUP BY zxid) b WHERE b.zxid=a.zxid
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) e ON a.zxid=e.zxid
+		LEFT JOIN (SELECT COUNT(id) my,zxid FROM tthjl WHERE khpj=4
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) f ON a.zxid=f.zxid
+		LEFT JOIN (SELECT cnum/COUNT(a.id) cpmyl,a.zxid FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=4 GROUP BY zxid) b WHERE b.zxid=a.zxid AND khpj IS NOT NULL
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) g ON a.zxid=g.zxid
+		LEFT JOIN (SELECT cnum/COUNT(a.id) ztmyl,a.zxid FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=4 GROUP BY zxid) b WHERE b.zxid=a.zxid
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) h ON a.zxid=h.zxid
+		LEFT JOIN (SELECT COUNT(id) bmy,zxid FROM tthjl WHERE khpj=2
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) i ON a.zxid=i.zxid
+		LEFT JOIN (SELECT COUNT(id) wpj,zxid FROM tthjl WHERE khpj IS NULL
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) j ON a.zxid=j.zxid
+		LEFT JOIN (SELECT COUNT(id) zj,zxid FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		 GROUP BY zxid) k ON a.zxid=k.zxid
+
+	</select>
+
+	<select id="timeMYDTJlistPage" parameterType="page" resultType="pd">
+		SELECT
+		<if test="pd.way=='day'">
+			DAY(a.kssj) AS time,
+		</if>
+		<if test="pd.way=='month'">
+			MONTH(a.kssj) AS time,
+		</if>
+		<if test="pd.way=='year'">
+			YEAR(a.kssj) AS time,
+		</if>
+		<if test="pd.way=='week'">
+			WEEK(a.kssj) AS time,
+		</if>
+		IFNULL(COUNT(b.khpj)/COUNT(b.id),0) cpl,
+		IFNULL(COUNT(c.id),0) fcmy,
+		IFNULL(d.cnum/COUNT(d.id),0) cpfcmyl,
+		IFNULL(e.cnum/COUNT(e.id),0) ztfcmyl,
+		IFNULL(COUNT(f.id),0) my,
+		IFNULL(g.cnum/COUNT(g.id),0) cpmyl,
+		IFNULL(h.cnum/COUNT(h.id),0) ztmyl,
+		IFNULL(COUNT(i.id),0) bmy,
+		IFNULL(COUNT(j.id),0) wpj,
+		IFNULL(COUNT(k.id),0) zj
+		FROM (SELECT kssj FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) a
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>) b ON a.kssj=b.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE khpj=5
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) c ON a.kssj=c.kssj
+		LEFT JOIN (SELECT a.id,b.cnum,kssj FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=5 GROUP BY zxid) b WHERE b.zxid=a.zxid AND khpj IS NOT NULL
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) d ON a.kssj=d.kssj
+		LEFT JOIN (SELECT a.id,b.cnum,kssj FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=5 GROUP BY zxid) b WHERE b.zxid=a.zxid
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) e ON a.kssj=e.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE khpj=4
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) f ON a.kssj=f.kssj
+		LEFT JOIN (SELECT a.id,b.cnum,kssj FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=4 GROUP BY zxid) b WHERE b.zxid=a.zxid AND khpj IS NOT NULL
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) g ON a.kssj=g.kssj
+		LEFT JOIN (SELECT a.id,b.cnum,kssj FROM tthjl a,(SELECT COUNT(khpj) cnum,zxid FROM tthjl WHERE khpj=4 GROUP BY zxid) b WHERE b.zxid=a.zxid
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) h ON a.kssj=h.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE khpj=2
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) i ON a.kssj=i.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE khpj IS NULL
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) j ON a.kssj=j.kssj
+		LEFT JOIN (SELECT * FROM tthjl WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) k ON a.kssj=k.kssj
+		GROUP BY TIME
+	</select>
+
+
+	<select id="XTHWTJlistPage" resultType="pd" parameterType="page">
+		SELECT
+		<if test="way=='day'">
+			DATE_FORMAT(a.kssj,'%d') as time,
+		</if>
+		<if test="way=='month'">
+			DATE_FORMAT(a.kssj,'%m') as time,
+		</if>
+		<if test="way=='year'">
+			DATE_FORMAT(a.kssj,'%Y') as time,
+		</if>
+		<if test="way=='week'">
+			DATE_FORMAT(a.kssj,'%u') as time,
+		</if>
+		IFNULL(COUNT(b.id),0) AS hrzj,
+		IFNULL(COUNT(c.id),0) AS rghrzj,
+		IFNULL(COUNT(d.id),0) AS fql,
+		IFNULL(COUNT(e.id),0) AS jtl,
+		IFNULL(COUNT(f.id),0) AS fifteenjtl,
+		IFNULL(COUNT(g.id),0) AS tenfql,
+		IFNULL(COUNT(h.id)/SUM(h.num),0) AS rjhwcl,
+		IFNULL(SUM(i.pdsj),0) AS pdsc,
+		IFNULL(COUNT(j.pdsj),0) AS pdl,
+		IFNULL(SUM(k.fqsj),0) AS zlsc,
+		IFNULL(COUNT(l.fqsj),0) AS zll,
+		IFNULL(SUM(n.thsj),0) AS thsc,
+		IFNULL(SUM(m.shclsj),0) AS shclsj,
+		IFNULL(COUNT(c.id)/COUNT(b.id),0) AS rghjzb,
+		IFNULL(COUNT(d.id)/COUNT(c.id),0) AS fqhjzb,
+		IFNULL(COUNT(e.id)/COUNT(c.id),0) AS jtzb,
+		IFNULL(COUNT(f.id)/COUNT(c.id),0) AS fifteenjtzb,
+		IFNULL(SUM(i.pdsj)/COUNT(j.pdsj),0) AS pjpdsc,
+		IFNULL(SUM(k.fqsj)/COUNT(l.fqsj),0) AS pjzlsc,
+		IFNULL(SUM(n.thsj)/COUNT(e.id),0) AS pjthsc,
+		IFNULL(COUNT(d.id)-COUNT(g.id),0) AS tenfql,
+		IFNULL(SUM(m.shclsj)/COUNT(e.id),0) AS pjshclsc
+		FROM (SELECT kssj FROM thwrz WHERE 1=1
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) a
+		LEFT JOIN (SELECT * FROM thwrz WHERE thfx=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) b ON a.kssj=b.kssj
+		LEFT JOIN (SELECT * FROM thwrz WHERE thfx=0 AND sfzrg=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) c ON a.kssj=c.kssj
+		LEFT JOIN (SELECT thwrz.id,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh AND thwrz.sfzrg=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) d ON a.kssj=d.kssj
+		LEFT JOIN (SELECT thwrz.id,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh AND thwrz.thsj!=0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) e ON a.kssj=e.kssj
+		LEFT JOIN (SELECT tthjl.id,tthjl.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh AND tthjl.ddsj+tthjl.fwsj>15
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) f ON a.kssj=f.kssj
+		LEFT JOIN (SELECT thwrz.id,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh AND thwrz.sfzrg=0 AND thwrz.pdsj+thwrz.fqsj &lt; 10
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) g ON a.kssj=g.kssj
+		LEFT JOIN (SELECT tthjl.id,tthjl.kssj,num  FROM thwrz,tthjl,(SELECT COUNT(DISTINCT zxid) num FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) a WHERE thwrz.hwlsh=tthjl.hwlsh) h ON a.kssj=h.kssj
+		LEFT JOIN (SELECT pdsj,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) i ON a.kssj=i.kssj
+		LEFT JOIN (SELECT pdsj,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh AND pdsj>0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) j ON a.kssj=j.kssj
+		LEFT JOIN (SELECT fqsj,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) k ON a.kssj=k.kssj
+		LEFT JOIN (SELECT fqsj,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh AND fqsj>0
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) l ON a.kssj=l.kssj
+		LEFT JOIN (SELECT thwrz.thsj,thwrz.kssj FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) n ON a.kssj=n.kssj
+		LEFT JOIN (SELECT tthjl.shclsj,thwrz.kssj  FROM thwrz,tthjl WHERE thwrz.hwlsh=tthjl.hwlsh
+		<if test="pd.starttime != null and pd.starttime != '' and pd.endtime != null and pd.endtime != ''">
+			and kssj between #{pd.starttime} and #{pd.endtime}
+		</if>
+		) m ON a.kssj=m.kssj
+		GROUP BY TIME
+	</select>
+
+
+
+
+</mapper>

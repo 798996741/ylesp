@@ -1,0 +1,12 @@
+package com.yulun.service;
+
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+
+import java.util.List;
+
+public interface OuterCallTaskManager {
+    List<PageData> findAllDictionariesPage(PageData pd) throws Exception;
+
+    List<PageData> listPage(Page page) throws Exception;
+}

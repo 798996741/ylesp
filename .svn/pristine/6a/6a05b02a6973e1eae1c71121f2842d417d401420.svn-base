@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MessageMapper">
+
+	<resultMap type="com.yulun.entity.MsgTemp" id="dictResultMap">
+		<id column="id" property="id"/>
+		<result column="content" property="content"/>
+		<result column="parentid" property="parentid"/>
+		<result column="tempname" property="tempname"/>
+	</resultMap>
+
+	<select id="findMsgAlllistPage" parameterType="page" resultType="pd">
+		select * from t_msgtemp where 1=1
+		<if test="pd.keywords != null and pd.keywords != ''">
+			AND (
+			content LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			tempname LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			parentid LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			)
+		</if>
+		order by id desc
+	</select>
+
+	<select id="listSubDictByParentId" parameterType="String" resultMap="dictResultMap">
+		select * from t_msgtemp where parentid=#{parentid} order by id desc
+	</select>
+
+
+    <insert id="insertMagTemp" parameterType="pd">
+		INSERT INTO t_msgtemp(
+		id,
+		content,
+		parentid,
+		tempname,
+		smstype
+		)VALUES (
+		#{id},
+		#{content},
+		#{parentid},
+		#{tempname},
+		#{smstype}
+		)
+	</insert>
+
+	<update id="updateMagTemp" parameterType="pd">
+		UPDATE t_msgtemp
+		SET
+		id=#{id},
+		content=#{content},
+		parentid=#{parentid},
+		tempname=#{tempname},
+		smstype=#{smstype}
+		WHERE id=#{id}
+	</update>
+
+    <delete id="deleteMagTemp" parameterType="pd">
+		DELETE FROM t_msgtemp WHERE id=#{id}
+	</delete>
+
+	<select id="findMsgLogAlllistPage" resultType="pd" parameterType="page">
+		SELECT
+		a.id,
+		DATE_FORMAT(a.time,'%Y-%m-%d %H:%i:%s') time,
+		a.way,
+		a.temp,
+		a.content,
+		a.acceptman,
+		a.phone,
+		a.uid,
+		a.sendman,
+		DATE_FORMAT(a.sendtime,'%Y-%m-%d %H:%i:%s') sendTime,
+		a.state,
+		a.returnmsg,
+		a.smstype,
+		b.tempname AS tempname,
+		(CASE WHEN a.cate='1' THEN '1'
+		WHEN a.cate='2' THEN (SELECT p.cate FROM tesp_person p WHERE p.lxtel=a.phone LIMIT 1)
+		ELSE '' END) cate,
+		(CASE WHEN a.cate='1' THEN '企业'
+		WHEN a.cate='2' THEN (SELECT (SELECT NAME FROM sys_dictionaries dic WHERE dic.DICTIONARIES_ID=p.cate) cate FROM tesp_person p WHERE p.lxtel=a.phone LIMIT 1)
+		ELSE '未知' END
+		) catename
+		FROM t_msglog a LEFT JOIN t_msgtemp b ON a.temp=b.id
+		left join sys_dictionaries c on a.cate=c.DICTIONARIES_ID
+		 WHERE 1=1
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and a.sendtime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.sendman!=null and pd.sendman!=''">
+			and a.sendman=#{pd.sendman}
+		</if>
+		<if test="pd.phone!=null and pd.phone!=''">
+			and a.phone=#{pd.phone}
+		</if>
+		<if test="pd.acceptman!=null and pd.acceptman!=''">
+			and a.acceptman=#{pd.acceptman}
+		</if>
+		<if test="pd.cate!=null and pd.cate!=''">
+			and (CASE WHEN a.cate='1' THEN '1'
+			WHEN a.cate='2' THEN (SELECT p.cate FROM tesp_person p WHERE p.lxtel=a.phone LIMIT 1)
+			ELSE '' END)=#{pd.cate}
+		</if>
+		<if test="pd.way!=null and pd.way!=''">
+			and a.way=#{pd.way}
+		</if>
+		<if test="pd.temp!=null and pd.temp!=''">
+			and a.temp=#{pd.temp}
+		</if>
+		<if test="pd.keywords != null and pd.keywords != ''">
+			AND (
+			a.time	 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.way LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.temp LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.content LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.acceptman LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.phone LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.sendman LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.state LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			)
+		</if>
+		order by id desc
+	</select>
+
+	<select id="findMsgLogAll" resultType="pd" parameterType="pd">
+		SELECT
+		a.id,
+		DATE_FORMAT(a.time,'%Y-%m-%d %H:%i:%s') time,
+		a.way,
+		a.temp,
+		a.content,
+		a.acceptman,
+		a.phone,
+		a.uid,
+		a.sendman,
+		DATE_FORMAT(a.sendtime,'%Y-%m-%d %H:%i:%s') sendtime,
+		a.state,
+		a.returnmsg,
+		a.cate,
+		b.tempname AS tempname
+		FROM t_msglog a LEFT JOIN t_msgtemp b ON a.temp=b.id
+
+		 WHERE 1=1
+		<if test="starttime!=null and starttime!='' and endtime!=null and endtime!=''">
+			and a.sendtime BETWEEN #{starttime} and #{endtime}
+		</if>
+		<if test="sendman!=null and sendman!=''">
+			and a.sendman=#{sendman}
+		</if>
+		<if test="phone!=null and phone!=''">
+			and a.phone=#{phone}
+		</if>
+		<if test="acceptman!=null and acceptman!=''">
+			and a.acceptman=#{acceptman}
+		</if>
+		<if test="way!=null and way!=''">
+			and a.way=#{way}
+		</if>
+		<if test="temp!=null and temp!=''">
+			and a.temp=#{temp}
+		</if>
+		<if test="keywords != null and keywords != ''">
+			AND (
+			a.time	 LIKE CONCAT(CONCAT('%', #{keywords}),'%') OR
+			a.way LIKE CONCAT(CONCAT('%', #{keywords}),'%') OR
+			a.temp LIKE CONCAT(CONCAT('%', #{keywords}),'%') OR
+			a.content LIKE CONCAT(CONCAT('%', #{keywords}),'%') OR
+			a.acceptman LIKE CONCAT(CONCAT('%', #{keywords}),'%') OR
+			a.phone LIKE CONCAT(CONCAT('%', #{keywords}),'%') OR
+			a.sendman LIKE CONCAT(CONCAT('%', #{keywords}),'%') OR
+			a.state LIKE CONCAT(CONCAT('%', #{keywords}),'%')
+			)
+		</if>
+		order by id desc
+	</select>
+	
+	
+	
+
+
+	<insert id="insertMsgLog" parameterType="pd">
+		INSERT INTO t_msglog(
+		time,
+		way,
+		temp,
+		content,
+		acceptman,
+		phone,
+		uid,
+		sendman,
+		czman,
+		czdate,
+		cate,
+		smstype
+		)VALUES (
+		#{time},
+		#{way},
+		#{temp},
+		#{content},
+		#{acceptman},
+		#{phone},
+		#{uid},
+		#{sendman},
+		#{czman},
+		#{czdate},
+		#{cate},
+		#{smstype}
+		)
+	</insert>
+
+	<update id="updateMsgLog" parameterType="pd">
+		UPDATE t_msglog
+		SET
+		time=#{time},
+		way=#{way},
+		temp=#{temp},
+		content=#{content},
+		acceptman=#{acceptman},
+		phone=#{phone},
+		uid=#{uid},
+		sendman=#{sendman},
+		czman=#{czman},
+		czdate=#{czdate},
+		cate=#{cate},
+		smstype=#{smstype}
+		where id=#{id}
+	</update>
+	
+	<select id="findMsgByState" resultType="pd" parameterType="pd">
+		SELECT * FROM t_msglog where state='0'
+        <if test="time!=null and time!=''">
+            and time &lt;= #{time}
+        </if>
+	</select>
+	
+	<update id="updateState" parameterType="pd">
+		UPDATE 
+			t_msglog
+		SET
+			state=#{state},
+			sendtime=now(),
+			returnmsg=#{returnmsg}
+		where id=#{id}
+	</update>
+
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="pd">
+		delete from
+		t_msgtemp
+		where
+		id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<select id="getcate" resultType="pd"  parameterType="pd">
+        SELECT p.uid,p.`name`,p.`tel` FROM tesp_person p WHERE p.cate = #{cate}
+    </select>
+	<select id="getcompany" resultType="pd"  parameterType="pd">
+        SELECT c.uid,c.lxr AS `name`,c.tel FROM tesp_company c
+    </select>
+
+
+	<select id="findSendMsgId" resultType="pd" parameterType="pd">
+		select * from t_msglog_id where 1=1
+		<if test="id!=null and id!=''">
+			and id = #{id}
+		</if>
+	</select>
+
+	<insert id="insertMsgId" parameterType="pd">
+		INSERT INTO t_msglog_id(
+		id
+		)VALUES (
+		#{id}
+		)
+	</insert>
+
+	<update id="updateMsgId" parameterType="pd">
+		UPDATE
+			t_msglog_id
+		SET
+			iscf=#{iscf},
+			time=now()
+		where id=#{id}
+	</update>
+	
+</mapper>

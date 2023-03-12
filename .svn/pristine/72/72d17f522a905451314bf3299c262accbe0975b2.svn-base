@@ -1,0 +1,67 @@
+package com.yulun.controller.outercall;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.OuterCallTaskManager;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+public class OuterCallTask implements CommonIntefate {
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+    @Resource(name = "outerCallTaskService")
+    private OuterCallTaskManager outerCallTaskManager;
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        Page page = new Page();
+        PageData pd_stoken = new PageData();
+        JSONObject json = data.getJSONObject("data");
+        pd_stoken.put("TOKENID", json.get("tokenid"));
+        String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+        PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+        JSONObject object = new JSONObject();
+        object.put("success", "true");
+        if (pd_token != null) {
+            if (cmd.equals("dictionaries")) {
+                pd.put("bianma", json.getString("bianma"));
+                List<PageData> allDictionariesPage = outerCallTaskManager.findAllDictionariesPage(pd);
+                object.put("data", allDictionariesPage);
+                //任务列表
+            } else if (cmd.equals("tasklist")) {
+                Integer pageIndex;
+                Integer pageSize;
+                List<PageData> list;
+                pd.putAll(json);
+                pageIndex = json.getInteger("pageIndex");
+                page.setCurrentPage(pageIndex);
+                pageSize = json.getInteger("pageSize");
+                page.setShowCount(pageSize);
+                page.setPd(pd);
+                list = outerCallTaskManager.listPage(page);
+                if (list.size() > 0) {
+
+                    object.put("success", "true");
+                    object.put("data", list);
+                    object.put("pageId", pageIndex);
+                    object.put("pageCount", page.getTotalPage());
+                    object.put("recordCount", page.getTotalResult());
+                } else {
+                    object.put("success", "false");
+                    object.put("msg", "暂无数据");
+                }
+            }
+        } else {
+            object.put("success", "false");
+            object.put("msg", "登录超时，请重新登录");
+        }
+        return object;
+    }
+}

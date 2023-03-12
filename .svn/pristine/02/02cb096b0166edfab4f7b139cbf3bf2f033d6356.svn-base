@@ -1,0 +1,1143 @@
+package com.yulun.controller.common;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.controller.base.BaseController;
+import com.fh.entity.Page;
+import com.fh.util.*;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.service.CommnoManager;
+import com.yulun.service.ConsumerManager;
+import com.yulun.service.JobReferManager;
+import com.yulun.service.VipInfoManager;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+
+@Controller
+@CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+@RequestMapping(value = "/api")
+public class ExcelController extends BaseController {
+
+    @Resource(name = "commnoService")
+    private CommnoManager commnoManager;
+
+    @Resource(name = "vipInfoService")
+    private VipInfoManager vipInfoManager;
+
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Resource(name = "consumerService")
+    private ConsumerManager consumerManager;
+
+    @Resource(name = "jobReferService")
+    private JobReferManager jobReferManager;
+
+    /**
+     * 导入用户信息到EXCEL
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/app_readComExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readComExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            System.out.println(request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "ComExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 2, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        pd.put("name", listPd.get(i).getString("var1"));
+                        pd.put("phone", listPd.get(i).getString("var2"));
+                        pd.put("age", listPd.get(i).getString("var3"));
+                        pd.put("sex", listPd.get(i).getString("var4"));
+                        pd.put("cardtype", listPd.get(i).getString("var5"));
+                        pd.put("idcard", listPd.get(i).getString("var6"));
+                        pd.put("address", listPd.get(i).getString("var7"));
+                        commnoManager.insertCommon(pd);
+
+                    }
+                    json.put("success", "true");
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    /**
+     * 导入用户信息到EXCEL
+     *
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/app_readVipExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readVipExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "VipExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 2, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        pd.put("id", getUUID32());
+                        pd.put("name", listPd.get(i).getString("var1"));
+                        pd.put("sex", listPd.get(i).getString("var2"));
+                        pd.put("idcard", listPd.get(i).getString("var3"));
+                        pd.put("recepdep", listPd.get(i).getString("var4"));
+                        pd.put("clevel", listPd.get(i).getString("var5"));
+                        pd.put("birthday", listPd.get(i).getString("var6"));
+                        pd.put("position", listPd.get(i).getString("var7"));
+                        pd.put("place", listPd.get(i).getString("var8"));
+                        pd.put("waiter", listPd.get(i).getString("var9"));
+                        pd.put("isimport", listPd.get(i).getString("var10"));
+                        pd.put("isusecard", listPd.get(i).getString("var11"));
+                        pd.put("ortherinfo", listPd.get(i).getString("var12"));
+                        pd.put("ctype", listPd.get(i).getString("var13"));
+                        pd.put("favorite", listPd.get(i).getString("var14"));
+                        pd.put("result", listPd.get(i).getString("var15"));
+                        vipInfoManager.insertVipInfo(pd);
+
+                    }
+                    json.put("success", "true");
+                }
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping(value = "/downComExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public void downComExcel(HttpServletResponse response) throws Exception {
+        FileDownload.fileDownload(response, PathUtil.getClasspath() + Const.FILEPATHFILE + "ComExcel.xls", "ComExcel.xls");
+    }
+
+    @RequestMapping(value = "/downVipExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public void downVipExcel(HttpServletResponse response) throws Exception {
+        FileDownload.fileDownload(response, PathUtil.getClasspath() + Const.FILEPATHFILE + "VipExcel.xls", "VipExcel.xls");
+    }
+
+    public String getUUID32() {
+        String uuid = UUID.randomUUID().toString();
+        uuid = uuid.replace("-", "");
+        return uuid;
+    }
+
+
+    /**
+     * 导出到Excel
+     */
+    @RequestMapping("/app_exportComExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String exportExcel(HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                PageData pd = new PageData();
+                Page page = new Page();
+                URLDecoder urlDecoder = new URLDecoder();
+                String name = pd.getString("name");
+                String phone = pd.getString("phone");
+                String idcard = pd.getString("idcard");
+                String type = pd.getString("type");
+                String keywords = pd.getString("keywords");
+                String pageIndex = pd.getString("pageIndex");
+                String pageSize = pd.getString("pageSize");
+                String name1 = name == null ? "" : urlDecoder.decode(name, "utf-8");
+                String phone1 = name == null ? "" : urlDecoder.decode(phone, "utf-8");
+                String idcard1 = name == null ? "" : urlDecoder.decode(idcard, "utf-8");
+                String type1 = name == null ? "" : urlDecoder.decode(type, "utf-8");
+                String keywords1 = name == null ? "" : urlDecoder.decode(keywords, "utf-8");
+                String pageIndex1 = name == null ? "" : urlDecoder.decode(pageIndex, "utf-8");
+                String pageSize1 = name == null ? "" : urlDecoder.decode(pageSize, "utf-8");
+                pd.put("name", name1);
+                pd.put("phone", phone1);
+                pd.put("idcard", idcard1);
+                pd.put("type", type1);
+                pd.put("keywords", keywords1);
+                pd.put("pageIndex", pageIndex1);
+                pd.put("pageSize", pageSize1);
+                page.setPd(pd);
+                System.out.println(pd);
+                List<PageData> clist = commnoManager.findAlllistPage(page);
+                System.out.println(clist);
+                if (clist.size() > 0) {
+                    //创建excel文件
+                    HSSFWorkbook wb = new HSSFWorkbook();
+                    //创建sheet页
+                    HSSFSheet sheet = wb.createSheet("普客信息记录");
+                    //创建标题行
+                    HSSFRow titleRow = sheet.createRow(0);
+                    titleRow.createCell((short) 0).setCellValue("客户姓名");
+                    titleRow.createCell((short) 1).setCellValue("客户电话");
+                    titleRow.createCell((short) 2).setCellValue("年龄");
+                    titleRow.createCell((short) 3).setCellValue("性别");
+                    titleRow.createCell((short) 4).setCellValue("证件类型");
+                    titleRow.createCell((short) 5).setCellValue("证件号码");
+                    titleRow.createCell((short) 6).setCellValue("所在区域");
+                    for (PageData pd1 : clist) {
+                        HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                        dataRow.createCell((short) 0).setCellValue(pd1.getString("name"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("phone"));
+                        dataRow.createCell((short) 2).setCellValue(pd1.getString("age"));
+                        dataRow.createCell((short) 3).setCellValue(pd1.getString("sex"));
+                        dataRow.createCell((short) 4).setCellValue(pd1.getString("cardtype"));
+                        dataRow.createCell((short) 5).setCellValue(pd1.getString("idcard"));
+                        dataRow.createCell((short) 6).setCellValue(pd1.getString("address"));
+                    }
+                    // 设置下载时客户端Excel的名称
+                    String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-CUSTINFO.xls";
+                    //设置下载的文件
+                    System.out.println(filename);
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/vnd.ms-excel");
+                    response.setHeader("Content-disposition", "attachment;filename=" + filename);
+                    OutputStream ouputStream = response.getOutputStream();//打开流
+                    wb.write(ouputStream); //在excel内写入流
+                    ouputStream.flush();// 刷新流
+                    ouputStream.close();// 关闭流
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping("/exportgraduateExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String exportgraduateExcel(HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                PageData pd = new PageData();
+                Page page = new Page();
+                URLDecoder urlDecoder = new URLDecoder();
+                String jobtype = pd.getString("jobtype");
+                String starttime = pd.getString("starttime");
+                String endtime = pd.getString("endtime");
+                String pageIndex = pd.getString("pageIndex");
+                String pageSize = pd.getString("pageSize");
+                String jobtype1 = jobtype == null ? "" : urlDecoder.decode(jobtype, "utf-8");
+                String starttime1 = starttime == null ? "" : urlDecoder.decode(starttime, "utf-8");
+                String endtime1 = endtime == null ? "" : urlDecoder.decode(endtime, "utf-8");
+
+                String pageIndex1 = pageIndex == null ? "" : urlDecoder.decode(pageIndex, "utf-8");
+                String pageSize1 = pageSize == null ? "" : urlDecoder.decode(pageSize, "utf-8");
+                pd.put("jobtype", jobtype1);
+                pd.put("starttime", starttime1);
+                pd.put("endtime", endtime1);
+                pd.put("pageIndex", pageIndex1);
+                pd.put("pageSize", pageSize1);
+                page.setPd(pd);
+                System.out.println(pd);
+                List<PageData> clist = consumerManager.findgraduatelistPage(page);
+                System.out.println(clist);
+                if (clist.size() > 0) {
+                    //创建excel文件
+                    HSSFWorkbook wb = new HSSFWorkbook();
+                    //创建sheet页
+                    HSSFSheet sheet = wb.createSheet("高校毕业生");
+                    //创建标题行
+                    HSSFRow titleRow = sheet.createRow(0);
+                    titleRow.createCell((short) 0).setCellValue("报到时间");
+                    titleRow.createCell((short) 1).setCellValue("姓名");
+                    titleRow.createCell((short) 2).setCellValue("性别");
+                    titleRow.createCell((short) 3).setCellValue("身份证号码");
+                    titleRow.createCell((short) 4).setCellValue("毕业院校");
+                    titleRow.createCell((short) 5).setCellValue("毕业日期");
+                    titleRow.createCell((short) 6).setCellValue("学历");
+                    titleRow.createCell((short) 7).setCellValue("所学专业");
+                    titleRow.createCell((short) 8).setCellValue("入学前户口所在地");
+                    titleRow.createCell((short) 9).setCellValue("联系电话");
+                    titleRow.createCell((short) 10).setCellValue("应急联系电话");
+                    titleRow.createCell((short) 11).setCellValue("就业地意向");
+
+                    for (PageData pd1 : clist) {
+                        HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                        dataRow.createCell((short) 0).setCellValue(pd1.getString("arrtime"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("name"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("sex"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("cardid"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("school"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("gradate"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("edubg"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("major"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("address"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("tel"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("extel"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("jobadd"));
+
+                    }
+                    // 设置下载时客户端Excel的名称
+                    String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-高校毕业生.xls";
+                    //设置下载的文件
+                    System.out.println(filename);
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/vnd.ms-excel");
+                    response.setHeader("Content-disposition", "attachment;filename=" + filename);
+                    OutputStream ouputStream = response.getOutputStream();//打开流
+                    wb.write(ouputStream); //在excel内写入流
+                    ouputStream.flush();// 刷新流
+                    ouputStream.close();// 关闭流
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping("/exportpovertyExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String exportpovertyExcel(HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                PageData pd = new PageData();
+                Page page = new Page();
+                URLDecoder urlDecoder = new URLDecoder();
+                String starttime = pd.getString("starttime");
+                String endtime = pd.getString("endtime");
+                String pageIndex = pd.getString("pageIndex");
+                String pageSize = pd.getString("pageSize");
+                String starttime1 = starttime == null ? "" : urlDecoder.decode(starttime, "utf-8");
+                String endtime1 = endtime == null ? "" : urlDecoder.decode(endtime, "utf-8");
+                String pageIndex1 = pageIndex == null ? "" : urlDecoder.decode(pageIndex, "utf-8");
+                String pageSize1 = pageSize == null ? "" : urlDecoder.decode(pageSize, "utf-8");
+                pd.put("starttime", starttime1);
+                pd.put("endtime", endtime1);
+                pd.put("pageIndex", pageIndex1);
+                pd.put("pageSize", pageSize1);
+                page.setPd(pd);
+                System.out.println(pd);
+                List<PageData> clist = consumerManager.findpovertylistPage(page);
+                System.out.println(clist);
+                if (clist.size() > 0) {
+                    //创建excel文件
+                    HSSFWorkbook wb = new HSSFWorkbook();
+                    //创建sheet页
+                    HSSFSheet sheet = wb.createSheet("建档立卡贫困人员");
+                    //创建标题行
+                    HSSFRow titleRow = sheet.createRow(0);
+                    titleRow.createCell((short) 0).setCellValue("入库时间");
+                    titleRow.createCell((short) 1).setCellValue("姓名");
+                    titleRow.createCell((short) 2).setCellValue("联系电话");
+                    titleRow.createCell((short) 3).setCellValue("备注");
+
+
+                    for (PageData pd1 : clist) {
+                        HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                        dataRow.createCell((short) 0).setCellValue(pd1.getString("cztime"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("name"));
+                        dataRow.createCell((short) 2).setCellValue(pd1.getString("tel"));
+                        dataRow.createCell((short) 3).setCellValue(pd1.getString("remark"));
+                    }
+                    // 设置下载时客户端Excel的名称
+                    String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-建档立卡贫困人员.xls";
+                    //设置下载的文件
+                    System.out.println(filename);
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/vnd.ms-excel");
+                    response.setHeader("Content-disposition", "attachment;filename=" + filename);
+                    OutputStream ouputStream = response.getOutputStream();//打开流
+                    wb.write(ouputStream); //在excel内写入流
+                    ouputStream.flush();// 刷新流
+                    ouputStream.close();// 关闭流
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping("/exportsbbtryExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String exportsbbtryExcel(HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                PageData pd = new PageData();
+                Page page = new Page();
+                URLDecoder urlDecoder = new URLDecoder();
+                String starttime = pd.getString("starttime");
+                String endtime = pd.getString("endtime");
+                String pageIndex = pd.getString("pageIndex");
+                String pageSize = pd.getString("pageSize");
+                String starttime1 = starttime == null ? "" : urlDecoder.decode(starttime, "utf-8");
+                String endtime1 = endtime == null ? "" : urlDecoder.decode(endtime, "utf-8");
+                String pageIndex1 = pageIndex == null ? "" : urlDecoder.decode(pageIndex, "utf-8");
+                String pageSize1 = pageSize == null ? "" : urlDecoder.decode(pageSize, "utf-8");
+                pd.put("starttime", starttime1);
+                pd.put("endtime", endtime1);
+                pd.put("pageIndex", pageIndex1);
+                pd.put("pageSize", pageSize1);
+                page.setPd(pd);
+                System.out.println(pd);
+                List<PageData> clist = consumerManager.findsbbtrylistPage(page);
+                System.out.println(clist);
+                if (clist.size() > 0) {
+                    //创建excel文件
+                    HSSFWorkbook wb = new HSSFWorkbook();
+                    //创建sheet页
+                    HSSFSheet sheet = wb.createSheet("社保补贴人员");
+                    //创建标题行
+                    HSSFRow titleRow = sheet.createRow(0);
+                    titleRow.createCell((short) 0).setCellValue("入库时间");
+                    titleRow.createCell((short) 1).setCellValue("姓名");
+                    titleRow.createCell((short) 2).setCellValue("联系电话");
+                    titleRow.createCell((short) 3).setCellValue("备注");
+
+
+                    for (PageData pd1 : clist) {
+                        HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                        dataRow.createCell((short) 0).setCellValue(pd1.getString("cztime"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("name"));
+                        dataRow.createCell((short) 2).setCellValue(pd1.getString("tel"));
+                        dataRow.createCell((short) 3).setCellValue(pd1.getString("remark"));
+                    }
+                    // 设置下载时客户端Excel的名称
+                    String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-社保补贴人员.xls";
+                    //设置下载的文件
+                    System.out.println(filename);
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/vnd.ms-excel");
+                    response.setHeader("Content-disposition", "attachment;filename=" + filename);
+                    OutputStream ouputStream = response.getOutputStream();//打开流
+                    wb.write(ouputStream); //在excel内写入流
+                    ouputStream.flush();// 刷新流
+                    ouputStream.close();// 关闭流
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping("/exportjzbtryExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String exportjzbtryExcel(HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                PageData pd = new PageData();
+                Page page = new Page();
+                URLDecoder urlDecoder = new URLDecoder();
+                String starttime = pd.getString("starttime");
+                String endtime = pd.getString("endtime");
+                String level = pd.getString("level");
+                String pageIndex = pd.getString("pageIndex");
+                String pageSize = pd.getString("pageSize");
+                String starttime1 = starttime == null ? "" : urlDecoder.decode(starttime, "utf-8");
+                String endtime1 = endtime == null ? "" : urlDecoder.decode(endtime, "utf-8");
+                String level1 = level == null ? "" : urlDecoder.decode(level, "utf-8");
+                String pageIndex1 = pageIndex == null ? "" : urlDecoder.decode(pageIndex, "utf-8");
+                String pageSize1 = pageSize == null ? "" : urlDecoder.decode(pageSize, "utf-8");
+                pd.put("starttime", starttime1);
+                pd.put("endtime", endtime1);
+                pd.put("level", level1);
+                pd.put("pageIndex", pageIndex1);
+                pd.put("pageSize", pageSize1);
+                page.setPd(pd);
+                System.out.println(pd);
+                List<PageData> clist = consumerManager.findjzbtrylistPage(page);
+                System.out.println(clist);
+                if (clist.size() > 0) {
+                    //创建excel文件
+                    HSSFWorkbook wb = new HSSFWorkbook();
+                    //创建sheet页
+                    HSSFSheet sheet = wb.createSheet("见证补贴人员");
+                    //创建标题行
+                    HSSFRow titleRow = sheet.createRow(0);
+                    titleRow.createCell((short) 0).setCellValue("入库时间");
+                    titleRow.createCell((short) 1).setCellValue("姓名");
+                    titleRow.createCell((short) 2).setCellValue("身份证号码");
+                    titleRow.createCell((short) 3).setCellValue("工种");
+                    titleRow.createCell((short) 4).setCellValue("证书等级");
+                    titleRow.createCell((short) 5).setCellValue("联系电话");
+                    titleRow.createCell((short) 6).setCellValue("所属地区");
+                    titleRow.createCell((short) 7).setCellValue("备注");
+
+                    for (PageData pd1 : clist) {
+                        HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                        dataRow.createCell((short) 0).setCellValue(pd1.getString("cztime"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("name"));
+                        dataRow.createCell((short) 2).setCellValue(pd1.getString("cardid"));
+                        dataRow.createCell((short) 3).setCellValue(pd1.getString("jobvar"));
+                        dataRow.createCell((short) 4).setCellValue(pd1.getString("level"));
+                        dataRow.createCell((short) 5).setCellValue(pd1.getString("tel"));
+                        dataRow.createCell((short) 6).setCellValue(pd1.getString("address"));
+                        dataRow.createCell((short) 7).setCellValue(pd1.getString("remark"));
+
+                    }
+                    // 设置下载时客户端Excel的名称
+                    String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-见证补贴人员.xls";
+                    //设置下载的文件
+                    System.out.println(filename);
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/vnd.ms-excel");
+                    response.setHeader("Content-disposition", "attachment;filename=" + filename);
+                    OutputStream ouputStream = response.getOutputStream();//打开流
+                    wb.write(ouputStream); //在excel内写入流
+                    ouputStream.flush();// 刷新流
+                    ouputStream.close();// 关闭流
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping("/exportcompanyExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String exportcompanyExcel(HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                PageData pd = new PageData();
+                Page page = new Page();
+                URLDecoder urlDecoder = new URLDecoder();
+                String name = pd.getString("name");
+                String qytype = pd.getString("qytype");
+                String lxr = pd.getString("lxr");
+                String lxtel = pd.getString("lxtel");
+                String keywords = pd.getString("keywords");
+                String pageIndex = pd.getString("pageIndex");
+                String pageSize = pd.getString("pageSize");
+                String name1 = name == null ? "" : urlDecoder.decode(name, "utf-8");
+                String qytype1 = qytype == null ? "" : urlDecoder.decode(qytype, "utf-8");
+                String lxr1 = lxr == null ? "" : urlDecoder.decode(lxr, "utf-8");
+                String lxtel1 = lxtel == null ? "" : urlDecoder.decode(lxtel, "utf-8");
+                String keywords1 = keywords == null ? "" : urlDecoder.decode(keywords, "utf-8");
+
+                String pageIndex1 = name == null ? "" : urlDecoder.decode(pageIndex, "utf-8");
+                String pageSize1 = name == null ? "" : urlDecoder.decode(pageSize, "utf-8");
+                pd.put("name", name1);
+                pd.put("qytype", qytype1);
+                pd.put("lxr", lxr1);
+                pd.put("lxtel", lxtel1);
+                pd.put("keywords", keywords1);
+
+                pd.put("pageIndex", pageIndex1);
+                pd.put("pageSize", pageSize1);
+                page.setPd(pd);
+                System.out.println(pd);
+                List<PageData> clist = consumerManager.findcompanylistPage(page);
+
+                System.out.println(clist);
+                if (clist.size() > 0) {
+                    //创建excel文件
+                    HSSFWorkbook wb = new HSSFWorkbook();
+                    //创建sheet页
+                    HSSFSheet sheet = wb.createSheet("企业招聘信息");
+                    //创建标题行
+                    HSSFRow titleRow = sheet.createRow(0);
+                    titleRow.createCell((short) 0).setCellValue("企业编号");
+                    titleRow.createCell((short) 1).setCellValue("企业名称");
+                    titleRow.createCell((short) 2).setCellValue("企业类型");
+                    titleRow.createCell((short) 3).setCellValue("联系人");
+                    titleRow.createCell((short) 4).setCellValue("联系电话");
+                    titleRow.createCell((short) 5).setCellValue("备用联系人");
+                    titleRow.createCell((short) 6).setCellValue("备用联系电话");
+                    titleRow.createCell((short) 7).setCellValue("企业地址");
+                    titleRow.createCell((short) 8).setCellValue("企业邮箱");
+                    titleRow.createCell((short) 9).setCellValue("招聘工种");
+                    titleRow.createCell((short) 10).setCellValue("岗位类型");
+                    titleRow.createCell((short) 11).setCellValue("招工人数");
+                    titleRow.createCell((short) 12).setCellValue("岗位要求");
+                    titleRow.createCell((short) 13).setCellValue("学历要求");
+                    titleRow.createCell((short) 14).setCellValue("专业要求");
+                    titleRow.createCell((short) 15).setCellValue("性别要求");
+                    titleRow.createCell((short) 16).setCellValue("年龄要求");
+                    titleRow.createCell((short) 17).setCellValue("工资待遇");
+                    titleRow.createCell((short) 18).setCellValue("其他说明");
+
+                    for (PageData pageData : clist) {
+                        String uid = pageData.getString("uid");
+                        PageData data = new PageData();
+                        data.put("uid", uid);
+                        Page page1 = new Page();
+                        page1.setPd(data);
+                        List<PageData> employ = consumerManager.findemployreglistPage(page1);
+                        PageData company = consumerManager.findcompany(data);
+                        for (PageData pd1 : employ) {
+                            HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                            dataRow.createCell((short) 0).setCellValue(pd1.size());
+                            dataRow.createCell((short) 1).setCellValue(company.getString("name"));
+                            dataRow.createCell((short) 2).setCellValue(company.getString("qytype"));
+                            dataRow.createCell((short) 3).setCellValue(company.getString("lxr"));
+                            dataRow.createCell((short) 4).setCellValue(company.getString("tel"));
+                            dataRow.createCell((short) 5).setCellValue(company.getString("bylxr"));
+                            dataRow.createCell((short) 6).setCellValue(company.getString("bylxtel"));
+                            dataRow.createCell((short) 7).setCellValue(company.getString("addr"));
+                            dataRow.createCell((short) 8).setCellValue(company.getString("email"));
+                            dataRow.createCell((short) 9).setCellValue(company.getString("gwfname"));
+                            dataRow.createCell((short) 10).setCellValue(company.getString("jobtype"));
+                            dataRow.createCell((short) 11).setCellValue(company.getString("zgrs"));
+                            dataRow.createCell((short) 12).setCellValue(company.getString("gwyq"));
+                            dataRow.createCell((short) 13).setCellValue(company.getString("xlyq"));
+                            dataRow.createCell((short) 14).setCellValue(company.getString("zyyq"));
+                            dataRow.createCell((short) 15).setCellValue(company.getString("sex"));
+                            dataRow.createCell((short) 16).setCellValue(company.getString("age"));
+                            dataRow.createCell((short) 17).setCellValue(company.getString("gzdy"));
+                            dataRow.createCell((short) 18).setCellValue(company.getString("remark"));
+
+                        }
+                    }
+
+                    // 设置下载时客户端Excel的名称
+                    String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-CUSTINFO.xls";
+                    //设置下载的文件
+                    System.out.println(filename);
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/vnd.ms-excel");
+                    response.setHeader("Content-disposition", "attachment;filename=" + filename);
+                    OutputStream ouputStream = response.getOutputStream();//打开流
+                    wb.write(ouputStream); //在excel内写入流
+                    ouputStream.flush();// 刷新流
+                    ouputStream.close();// 关闭流
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+
+    @RequestMapping(value = "/readgraduateExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readgraduateExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            System.out.println(request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "ComExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 1, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        pd.put("arrtime", listPd.get(i).getString("var1"));
+                        pd.put("name", listPd.get(i).getString("var2"));
+                        pd.put("sex", listPd.get(i).getString("var3"));
+                        pd.put("cardid", listPd.get(i).getString("var4"));
+                        pd.put("school", listPd.get(i).getString("var5"));
+                        pd.put("gradate", listPd.get(i).getString("var6"));
+                        pd.put("edubg", listPd.get(i).getString("var7"));
+                        pd.put("major", listPd.get(i).getString("var8"));
+                        pd.put("address", listPd.get(i).getString("var9"));
+                        pd.put("tel", listPd.get(i).getString("var10"));
+                        pd.put("extel", listPd.get(i).getString("var11"));
+                        consumerManager.insertgraduate(pd);
+                    }
+                    json.put("success", "true");
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+
+    @RequestMapping(value = "/readpovertyExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readpovertyExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            System.out.println(request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "ComExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 1, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        pd.put("cztime", getTime());
+                        pd.put("name", listPd.get(i).getString("var2"));
+                        pd.put("tel", listPd.get(i).getString("var3"));
+                        pd.put("remark", listPd.get(i).getString("var4"));
+                        consumerManager.insertpoverty(pd);
+                    }
+                    json.put("success", "true");
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping(value = "/readsbbtryExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readsbbtryExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            System.out.println(request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "ComExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 1, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        pd.put("cztime", getTime());
+                        pd.put("name", listPd.get(i).getString("var2"));
+                        pd.put("tel", listPd.get(i).getString("var3"));
+                        pd.put("remark", listPd.get(i).getString("var4"));
+                        consumerManager.insertsbbtry(pd);
+                    }
+                    json.put("success", "true");
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping(value = "/readjzbtryExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readjzbtryExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            System.out.println(request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "ComExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 1, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        pd.put("cztime", getTime());
+                        pd.put("name", listPd.get(i).getString("var1"));
+                        pd.put("cardid", listPd.get(i).getString("var2"));
+                        pd.put("jobvar", listPd.get(i).getString("var3"));
+                        pd.put("level", listPd.get(i).getString("var4"));
+                        pd.put("tel", listPd.get(i).getString("var5"));
+                        pd.put("address", listPd.get(i).getString("var6"));
+                        pd.put("remark", listPd.get(i).getString("var7"));
+                        consumerManager.insertjzbtry(pd);
+                    }
+                    json.put("success", "true");
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    @RequestMapping(value = "/readcompanyExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readcompanyExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            System.out.println(request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "ComExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 1, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        PageData pageData = new PageData();
+                        pageData.put("tel", listPd.get(i).getString("var5"));
+                        PageData findcompany = consumerManager.findcompany(pageData);
+                        if (findcompany == null) {
+                            PageData data1 = new PageData();
+                            data1.put("name", listPd.get(i).getString("var2"));
+                            data1.put("qytype", listPd.get(i).getString("var3"));
+                            data1.put("lxr", listPd.get(i).getString("var4"));
+                            data1.put("tel", listPd.get(i).getString("var5"));
+                            data1.put("bylxr", listPd.get(i).getString("var6"));
+                            data1.put("bylxtel", listPd.get(i).getString("var7"));
+                            data1.put("addr", listPd.get(i).getString("var8"));
+                            data1.put("email", listPd.get(i).getString("var9"));
+                            consumerManager.insertcompany(data1);
+
+                        }
+
+                    }
+                    for (int i = 0; i < listPd.size(); i++) {
+                        PageData pageData = new PageData();
+                        pageData.put("tel", listPd.get(i).getString("var5"));
+                        PageData findcompany = consumerManager.findcompany(pageData);
+                        if (findcompany != null) {
+                            PageData data1 = new PageData();
+                            data1.put("uid", findcompany.getString("uid"));
+                            data1.put("jobname", listPd.get(i).getString("var10"));
+                            data1.put("jobtype", listPd.get(i).getString("var11"));
+                            data1.put("zgrs", listPd.get(i).getString("var12"));
+                            data1.put("xlyq", listPd.get(i).getString("var13"));
+                            data1.put("zyyq", listPd.get(i).getString("var14"));
+                            data1.put("sex", listPd.get(i).getString("var15"));
+                            String var16 = listPd.get(i).getString("var16");
+                            String[] split = var16.split("-");
+                            data1.put("agestart", split[0]);
+                            data1.put("ageend", split[1]);
+                            data1.put("gzdy", listPd.get(i).getString("var17"));
+                            data1.put("remark", listPd.get(i).getString("var18"));
+                            consumerManager.insertemployreg(data1);
+                        }
+                    }
+                    json.put("success", "true");
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+
+    @RequestMapping("/exportpersonExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String exportpersonExcel(HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                PageData pd = new PageData();
+                Page page = new Page();
+                URLDecoder urlDecoder = new URLDecoder();
+                String name = pd.getString("name");
+                String age = pd.getString("age");
+                String sex = pd.getString("sex");
+                String xl = pd.getString("xl");
+                String isjob = pd.getString("isjob");
+                String jobtype = pd.getString("jobtype");
+                String jobname = pd.getString("jobname");
+                String qwxz = pd.getString("qwxz");
+                String pageIndex = pd.getString("pageIndex");
+                String pageSize = pd.getString("pageSize");
+                String name1 = name == null ? "" : urlDecoder.decode(name, "utf-8");
+                String age1 = age == null ? "" : urlDecoder.decode(age, "utf-8");
+                String sex1 = sex == null ? "" : urlDecoder.decode(sex, "utf-8");
+                String xl1 = xl == null ? "" : urlDecoder.decode(xl, "utf-8");
+                String isjob1 = isjob == null ? "" : urlDecoder.decode(isjob, "utf-8");
+                String jobtype1 = jobtype == null ? "" : urlDecoder.decode(jobtype, "utf-8");
+                String jobname1 = jobname == null ? "" : urlDecoder.decode(jobname, "utf-8");
+                String qwxz1 = qwxz == null ? "" : urlDecoder.decode(qwxz, "utf-8");
+                String pageIndex1 = name == null ? "" : urlDecoder.decode(pageIndex, "utf-8");
+                String pageSize1 = name == null ? "" : urlDecoder.decode(pageSize, "utf-8");
+                pd.put("name", name1);
+                pd.put("age", age1);
+                pd.put("sex", sex1);
+                pd.put("xl", xl1);
+                pd.put("isjob", isjob1);
+                pd.put("jobtype", jobtype1);
+                pd.put("jobname", jobname1);
+                pd.put("qwxz", qwxz1);
+                pd.put("pageIndex", pageIndex1);
+                pd.put("pageSize", pageSize1);
+                page.setPd(pd);
+                System.out.println(pd);
+                List<PageData> clist = jobReferManager.PersonreferlistPage(page);
+
+                System.out.println(clist);
+                if (clist.size() > 0) {
+                    //创建excel文件
+                    HSSFWorkbook wb = new HSSFWorkbook();
+                    //创建sheet页
+                    HSSFSheet sheet = wb.createSheet("求职登记汇总");
+                    //创建标题行
+                    HSSFRow titleRow = sheet.createRow(0);
+                    titleRow.createCell((short) 0).setCellValue("姓名");
+                    titleRow.createCell((short) 1).setCellValue("身份证号");
+                    titleRow.createCell((short) 2).setCellValue("性别");
+                    titleRow.createCell((short) 3).setCellValue("年龄");
+                    titleRow.createCell((short) 4).setCellValue("联系电话");
+                    titleRow.createCell((short) 5).setCellValue("学历");
+                    titleRow.createCell((short) 6).setCellValue("专业");
+                    titleRow.createCell((short) 7).setCellValue("籍贯");
+                    titleRow.createCell((short) 8).setCellValue("就业状态");
+                    titleRow.createCell((short) 9).setCellValue("邮箱");
+                    titleRow.createCell((short) 10).setCellValue("求职意向");
+                    titleRow.createCell((short) 11).setCellValue("意向岗位");
+                    titleRow.createCell((short) 12).setCellValue("期望薪资");
+
+                    for (PageData pd1 : clist) {
+
+                        HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                        dataRow.createCell((short) 0).setCellValue(pd1.getString("name"));
+                        dataRow.createCell((short) 1).setCellValue(pd1.getString("cardid"));
+                        String sex2 = pd1.getString("sex").equals("1") ? "男" : "女";
+                        dataRow.createCell((short) 2).setCellValue(sex2);
+                        dataRow.createCell((short) 3).setCellValue(pd1.getString("age"));
+                        dataRow.createCell((short) 4).setCellValue(pd1.getString("lxtel"));
+                        dataRow.createCell((short) 5).setCellValue(pd1.getString("xl"));
+                        dataRow.createCell((short) 6).setCellValue(pd1.getString("zy"));
+                        dataRow.createCell((short) 7).setCellValue(pd1.getString("jg"));
+                        String isjob2 = pd1.getString("isjob").equals("1") ? "是" : "否";
+                        dataRow.createCell((short) 8).setCellValue(isjob2);
+                        dataRow.createCell((short) 9).setCellValue(pd1.getString("email"));
+                        dataRow.createCell((short) 10).setCellValue(pd1.getString("jobtype"));
+                        dataRow.createCell((short) 11).setCellValue(pd1.getString("jobname"));
+                        dataRow.createCell((short) 12).setCellValue(pd1.getString("qwxz"));
+                    }
+
+
+                    // 设置下载时客户端Excel的名称
+                    String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-求职登记汇总.xls";
+                    //设置下载的文件
+                    System.out.println(filename);
+                    response.setCharacterEncoding("UTF-8");
+                    response.setContentType("application/vnd.ms-excel");
+                    response.setHeader("Content-disposition", "attachment;filename=" + filename);
+                    OutputStream ouputStream = response.getOutputStream();//打开流
+                    wb.write(ouputStream); //在excel内写入流
+                    ouputStream.flush();// 刷新流
+                    ouputStream.close();// 关闭流
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+
+    @RequestMapping(value = "/readpersonExcel")
+    @CrossOrigin(allowedHeaders = "*", allowCredentials = "true")
+    @ResponseBody()
+    public String readpersonExcel(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request) throws Exception {
+        PageData pd = new PageData();
+        JSONObject json = new JSONObject();
+        try {
+            PageData pd_stoken = new PageData();
+            pd_stoken.put("TOKENID", request.getParameter("tokenid"));
+            System.out.println(request.getParameter("tokenid"));
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (pd_token != null) {
+                if (null != file && !file.isEmpty()) {
+                    String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+                    String fileName = FileUpload.fileUp(file, filePath, "ComExcel");                            //执行上传
+                    List<PageData> listPd = (List) ObjectExcelRead.readExcel(filePath, fileName, 1, 0, 0);        //执行读EXCEL操作,读出的数据导入List 2:从第3行开始；0:从第A列开始；0:第0个sheet
+                    /*存入数据库操作======================================*/
+                    for (int i = 0; i < listPd.size(); i++) {
+                        PageData pageData = new PageData();
+                        pageData.put("tel", listPd.get(i).getString("var5"));
+                        PageData findperson = jobReferManager.findperson(pageData);
+                        if (findperson == null) {
+                            PageData data1 = new PageData();
+                            data1.put("name", listPd.get(i).getString("var2"));
+                            data1.put("sex", listPd.get(i).getString("var3"));
+                            data1.put("age", listPd.get(i).getString("var4"));
+                            data1.put("tel", listPd.get(i).getString("var5"));
+                            data1.put("isjob", listPd.get(i).getString("var6"));
+                            data1.put("cardid", listPd.get(i).getString("var7"));
+                            data1.put("jg", listPd.get(i).getString("var8"));
+                            data1.put("xl", listPd.get(i).getString("var9"));
+                            data1.put("zy", listPd.get(i).getString("var10"));
+                            data1.put("email", listPd.get(i).getString("var11"));
+                            jobReferManager.insertperson(data1);
+                        }
+
+                    }
+                    for (int i = 0; i < listPd.size(); i++) {
+                        PageData pageData = new PageData();
+                        pageData.put("tel", listPd.get(i).getString("var5"));
+                        PageData findperson = jobReferManager.findperson(pageData);
+                        if (findperson != null) {
+                            PageData data1 = new PageData();
+                            data1.put("uid", findperson.getString("uid"));
+                            data1.put("jobname", listPd.get(i).getString("var10"));
+                            data1.put("jobtype", listPd.get(i).getString("var11"));
+                            data1.put("qwxz", listPd.get(i).getString("var12"));
+                            data1.put("jobaddr", listPd.get(i).getString("var13"));
+                            data1.put("remark", listPd.get(i).getString("var14"));
+                            jobReferManager.insertperson(data1);
+                        }
+                    }
+                    json.put("success", "true");
+                }
+
+            } else {
+                json.put("success", "false");
+                json.put("msg", "登录超时，请重新登录");
+            }
+        } catch (Exception e) {
+            json.put("success", "false");
+        }
+        return json.toString();
+    }
+
+    public String getTime() {
+        Date date = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(date);
+    }
+
+}

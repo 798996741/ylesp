@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CompanyMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		tesp_company
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		uid,
+		qytype,
+		name,
+		addr,
+		email,
+		lxr,
+		tel,
+		lxtel,
+		bylxr,
+		bylxtel,
+		czman,
+		czdate
+				
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{uid},
+		#{qytype},
+		#{name},
+		#{addr},
+		#{email},
+		#{lxr},
+		#{tel},
+		#{lxtel},
+		#{bylxr},
+		#{bylxtel},
+		#{czman},
+		now()
+	</sql>
+	
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	
+	<!-- 批量删除 -->
+	<update id="deleteAll" parameterType="String">
+		delete from 
+			<include refid="tableName"></include>
+		where 
+			find_in_set(uid,#{uid})
+	</update>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			qytype=#{qytype},
+			name=#{name},
+			addr=#{addr},
+			email=#{email},
+			lxr=#{lxr},
+			tel=#{tel},
+			lxtel=#{lxtel},
+			bylxr=#{bylxr},
+			bylxtel=#{bylxtel},
+			czman=#{czman},
+			czdate=now()
+		where 
+		uid = #{uid}
+	</update>
+	
+	
+	
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select 
+			a.uid,
+			a.qytype,
+			a.name,
+			a.addr,
+			a.email,
+			a.lxr,
+			a.tel,
+			a.lxtel,
+			a.bylxr,
+			a.bylxtel,
+			a.czman,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as qytypename,
+			c.zxxm as czname
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.qytype=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		where 1=1
+		
+		<if test="pd.tel!= null and pd.tel != ''"><!-- 关键词检索 -->
+			and
+				(
+					a.tel LIKE CONCAT(CONCAT('%', #{pd.tel}),'%')
+					or a.lxtel LIKE CONCAT(CONCAT('%', #{pd.tel}),'%')
+				)
+		</if>
+		
+		<if test="pd.qytype!= null and pd.qytype != ''"><!-- 关键词检索 -->
+			and  a.qytype = #{pd.qytype} 
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!=''"><!-- 开始时间检索 -->
+			and a.czdate &gt;= #{pd.starttime} 
+		</if>
+		<if test="pd.endtime!=null and pd.endtime!=''"><!-- 结束时间检索 -->
+			and a.czdate &lt;= #{pd.endtime} 
+		</if>
+		<if test="pd.name!= null and pd.name!= ''">
+			and a.name LIKE CONCAT(CONCAT('%', #{pd.name}),'%')
+		</if>
+		<if test="pd.lxr!= null and pd.lxr!= ''">
+			and a.lxr LIKE CONCAT(CONCAT('%', #{pd.lxr}),'%')
+		</if>
+		
+		order by a.czdate desc	
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByuid" parameterType="pd" resultType="pd">
+		select 
+			a.uid,
+			a.qytype,
+			a.name,
+			a.addr,
+			a.email,
+			a.lxr,
+			a.tel,
+			a.lxtel,
+			a.bylxr,
+			a.bylxtel,
+			a.czman,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as qytypename,
+			c.zxxm as czname
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.qytype=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		where 1=1
+			and a.uid = #{uid}
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByTel" parameterType="pd" resultType="pd">
+		select 
+			a.uid,
+			a.qytype,
+			a.name,
+			a.addr,
+			a.email,
+			a.lxr,
+			a.tel,
+			a.lxtel,
+			a.bylxr,
+			a.bylxtel,
+			a.czman,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as qytypename,
+			c.zxxm as czname
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.qytype=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		where 1=1 and a.tel = #{tel}
+		order by  a.czdate desc limit 0,1
+	</select>
+	
+	
+	<!-- 列表 -->
+	<select id="listGwfl" parameterType="pd" resultType="pd">
+		select * from tesp_jobtype order by code	
+	</select>
+	
+	
+	<!-- 新增-->
+	<insert id="saveTj" parameterType="pd">
+		insert into tesp_tj
+		(
+			uid,
+			regid,
+			istj,
+			czdate
+		) values (
+			#{uid},
+			#{regid},
+			'1',
+			now()
+		)
+	</insert>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findTjByRegid" parameterType="pd" resultType="pd">
+		select 
+			*
+		 from 
+			tesp_tj a 
+		where a.uid = #{uid} and regid=#{regid}
+	</select>
+	
+	
+	
+	<!-- 新增-->
+	<insert id="saveZczx" parameterType="pd">
+		insert into tesp_zczx
+		(
+			zczxname,
+			zczxtype,
+			isjd,
+			remark,
+			uid,
+			czman,
+			czdate,
+			fwcont,
+			type
+		) values (
+			#{zczxname},
+			#{zczxtype},
+			#{isjd},
+			#{remark},
+			#{uid},
+			#{czman},
+			now(),
+			#{fwcont},
+			#{type}
+		)
+	</insert>
+	
+	
+	<!-- 修改 -->
+	<update id="editZczx" parameterType="pd">
+		update
+			tesp_zczx
+		set 
+  			zczxname=#{zczxname},
+			zczxtype=#{zczxtype},
+			isjd=#{isjd},
+			remark=#{remark},
+			fwcont=#{fwcont},
+			czman=#{czman},
+			czdate=now()
+		where 
+		id = #{id}
+	</update>
+	
+	
+		<!-- 通过id获取数据 -->
+	<select id="findZczxByuidlistPage" parameterType="page" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.zczxname,
+			a.zczxtype,
+			a.isjd,
+			a.remark,
+			a.czman,
+			a.fwcont,
+			a.type,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			GROUP_CONCAT(b.name) as zczxtypename
+		from 
+		tesp_zczx a 
+		left join SYS_DICTIONARIES b  ON FIND_IN_SET(b.DICTIONARIES_ID,a.zczxtype)
+		where 1=1
+			and a.uid = #{pd.uid}
+			and a.type = #{pd.type}
+		group by a.id	
+	</select>
+	
+	
+	<!-- 新增-->
+	<insert id="saveYwyd" parameterType="pd">
+	
+		insert into tesp_ywyd
+		(
+			ywname,
+			ydqd,
+			isjd,
+			remark,
+			uid,
+			czman,
+			czdate,
+			type
+		) values (
+			#{ywname},
+			#{ydqd},
+			#{isjd},
+			#{remark},
+			#{uid},
+			#{czman},
+			now(),
+			#{type}
+		)
+	</insert>
+	
+	
+	<!-- 修改 -->
+	<update id="editYwyd" parameterType="pd">
+		update
+			tesp_ywyd
+		set 
+  			ywname=#{ywname},
+			ydqd=#{ydqd},
+			isjd=#{isjd},
+			remark=#{remark},
+			czman=#{czman},
+			czdate=now()
+		where 
+		id = #{id}
+	</update>
+	
+	
+		<!-- 通过id获取数据 -->
+	<select id="findYwydByuidlistPage" parameterType="page" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.ywname,
+			a.ydqd,
+			a.isjd,
+			a.remark,
+			a.czman,
+			a.type,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as ydqdname,
+			c.zxxm as czname
+		from 
+		tesp_ywyd a 
+		left join SYS_DICTIONARIES b on a.ydqd=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh		
+		where 1=1
+			and a.uid = #{pd.uid}
+			and a.type = #{pd.type}
+	</select>
+	
+	<!-- 新增-->
+	<insert id="saveQtfw" parameterType="pd">
+	
+		insert into tesp_qtfw
+		(
+			fwname,
+			fwtype,
+			cljg,
+			remark,
+			uid,
+			czman,
+			czdate,
+			type
+		) values (
+			#{fwname},
+			#{fwtype},
+			#{cljg},
+			#{remark},
+			#{uid},
+			#{czman},
+			now(),
+			#{type}
+		)
+	</insert>
+	
+	
+	<!-- 修改 -->
+	<update id="editQtfw" parameterType="pd">
+		update
+			tesp_qtfw
+		set 
+  			fwname=#{fwname},
+			fwtype=#{fwtype},
+			cljg=#{cljg},
+			remark=#{remark},
+			czman=#{czman},
+			czdate=now()
+		where 
+		id = #{id}
+	</update>
+	
+	
+		<!-- 通过id获取数据 -->
+	<select id="findQtfwByuidlistPage" parameterType="page" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.fwname,
+			a.fwtype,
+			a.cljg,
+			a.remark,
+			a.czman,
+			a.type,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as fwtypename,
+			c.zxxm as czname
+		from 
+		tesp_qtfw a 
+		left join SYS_DICTIONARIES b on a.fwtype=b.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh		
+		where 1=1
+			and a.uid = #{pd.uid}
+			and a.type = #{pd.type}
+	</select>
+	
+	
+	<!-- 通过用工统计获取数据 -->
+	<select id="ygtj" parameterType="pd" resultType="pd">
+	select * from (select a.uid,a.id,a.jobname,a.jobtype,a.personuid,a.personname,a.age,a.personsex,a.personqwxz,a.persontel,f.name as xlname,a.zy,a.jobaddr,a.regid,e.gwflname,d.name as jobtypename,t.istj from (SELECT emp.*,case emp.sex when '0' then '1,2' when '1' then '1' when '2' then '2' end as sex1,
+		t.xl as jobxl,t.qwxz,t.sex as personsex,t.age,t.name as personname,t.uid as personuid,t.qwxz as personqwxz,t.tel as persontel,t.zy,t.jobaddr,t.id as regid FROM tesp_employreg emp join (
+		 SELECT a.*,b.sex,b.name,b.age,b.xl,b.lxtel as tel,b.zy FROM tesp_jobreg a left join tesp_person b on a.uid=b.uid where a.isvalid='1'
+		) t  where emp.xl=t.xl and emp.jobtype=t.jobtype and emp.jobname=t.jobname and emp.gzdy=t.qwxz  and emp.ageend>=t.age and t.age>=emp.agestart and  emp.isvalid='1'
+		) a 
+		left join tesp_jobtype e on a.jobname=e.code
+				left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+			left join SYS_DICTIONARIES f on a.jobxl=f.DICTIONARIES_ID
+				left join tesp_tj t on t.uid=a.uid and a.id=t.regid
+		where FIND_IN_SET(a.personsex,sex1) and a.uid = #{uid}
+		union 
+		select a.uid,a.id,a.jobname,a.jobtype,a.personuid,a.personname,a.age,a.personsex,a.personqwxz,a.persontel,f.name as xlname,a.zy,a.jobaddr,t.regid,e.gwflname,d.name as jobtypename,t.istj from (SELECT emp.*,case emp.sex when '0' then '1,2' when '1' then '1' when '2' then '2' end as sex1,
+		t.xl as jobxl,t.qwxz,t.sex as personsex,t.age,t.name as personname,t.uid as personuid,t.qwxz as personqwxz,t.tel as persontel,t.zy,t.jobaddr,t.id as regid FROM tesp_employreg emp join (
+		 SELECT a.*,b.sex,b.name,b.age,b.xl,b.lxtel as tel,b.zy FROM tesp_jobreg a left join tesp_person b on a.uid=b.uid where a.isvalid='1'
+		) t   where  emp.jobname=t.jobname and  emp.isvalid='1' 
+		) a 
+		left join tesp_jobtype e on a.jobname=e.code
+				left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES f on a.jobxl=f.DICTIONARIES_ID
+				left join tesp_tj t on t.uid=a.uid and a.id=t.regid
+		where   a.uid = #{uid}
+	) ygtj where 1=1
+		<if test="name!= null and name!= ''">
+			and personname=#{name}
+		</if>
+		<if test="tel!= null and tel!= ''">
+			and persontel=#{tel}
+		</if>
+	</select>
+	
+	
+	<!-- 通过uid获取就业数据 -->
+	<select id="jytj" parameterType="pd" resultType="pd">
+	select * from (
+		select a.*,e.gwflname,d.name as jobtypename,t.istj,f.name as xlname from (
+		SELECT emp.sex1,emp.name as
+		companyname,emp.addr,emp.email,emp.lxr,emp.lxtel,emp.gzdy,emp.xl,emp.gwyq,a.id,a.jobname,a.jobtype,b.name,b.sex,b.uid FROM
+		tesp_jobreg a
+		left join tesp_person b on a.uid=b.uid
+		join (select t.*,b.name,b.addr,b.lxtel,b.email,b.lxr,case t.sex when '0' then '1,2' when '1' then '1'
+		when '2' then '2' end as sex1 from tesp_employreg t left join
+		tesp_company b on t.uid=b.uid where t.isvalid='1') emp
+		where emp.xl=b.xl and emp.jobtype=a.jobtype and emp.jobname=a.jobname and
+		emp.gzdy=a.qwxz and emp.ageend>=b.age and b.age>=emp.agestart
+		) a
+			left join tesp_jobtype e on a.jobname=e.code
+			left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+			left join tesp_tj t on t.uid=a.uid and a.id=t.regid
+		left join SYS_DICTIONARIES f on a.xl=f.DICTIONARIES_ID
+		where FIND_IN_SET(a.sex,a.sex1)  and a.uid=#{uid}
+		union
+		select a.*,e.gwflname,d.name as jobtypename,t.istj,f.name as xlname from (
+		SELECT emp.sex1,emp.name as
+		companyname,emp.addr,emp.email,emp.lxr,emp.lxtel,emp.gzdy,emp.xl,emp.gwyq,a.id,a.jobname,a.jobtype,b.name,b.sex,b.uid FROM
+		tesp_jobreg a
+		left join tesp_person b on a.uid=b.uid
+		join (select t.*,b.name,b.addr,b.lxtel,b.email,b.lxr,case t.sex when '0' then '1,2' when '1' then '1'
+		when '2' then '2' end as sex1 from tesp_employreg t left join
+		tesp_company b on t.uid=b.uid where t.isvalid='1') emp
+			where emp.jobname=a.jobname and a.uid='1239'
+		) a left join tesp_jobtype e on a.jobname=e.code
+		left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES f on a.xl=f.DICTIONARIES_ID
+		left join tesp_tj t on t.uid=a.uid and a.id=t.regid where a.uid = #{uid}
+	) jytj where 1=1
+		<if test="name!= null and name!= ''">
+			and companyname=#{name}
+		</if>
+		<if test="tel!= null and tel!= ''">
+			and lxtel=#{tel}
+		</if>
+	</select>
+	
+	
+	<!-- 351412933 -->
+</mapper>

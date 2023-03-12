@@ -1,0 +1,140 @@
+package com.yulun.controller.TrainInfo;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.TrainInfoManager;
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-08 10:37
+ **/
+public class TrainInfoWeb implements CommonIntefate {
+    String SUCCESS = "success";
+    String MSG = "msg";
+    String FALSE = "false";
+    String TURE = "true";
+    Integer pageIndex;
+    Integer pageSize;
+
+    @Resource(name="zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Resource(name="trainInfoService")
+    private TrainInfoManager trainInfoService;
+
+
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) {
+        JSONObject object=new JSONObject();
+        PageData pd = new PageData();
+        String cmd = data.getString("cmd")==null?"":data.getString("cmd");
+        PageData pd_stoken=new PageData();
+        JSONObject json = data.getJSONObject("data");
+        pd_stoken.put("TOKENID", json.get("tokenid"));
+        try {
+        PageData pd_token=zxlbService.findByTokenId(pd_stoken);
+        if (null == pd_token){
+            json.put(SUCCESS,"false");
+            json.put(MSG,"请重新登陆");
+        }
+        //查询方法
+        if("trainInfoList".equals(cmd)){
+            Page page = new Page();
+            pageIndex = json.getInteger("pageIndex");
+            pageSize = json.getInteger("pageSize");
+            if(pageSize == null || "".equals(pageSize) || pageIndex == null || "".equals(pageIndex) ){
+                object.put(SUCCESS,FALSE);
+                object.put(MSG,"入参错误");
+                return object;
+            }else {
+                page.setCurrentPage(pageIndex);
+                page.setShowCount(pageSize);
+            }
+//            查询条件
+            pd.put("name", json.get("name"));
+            pd.put("keywords",json.get("keywords"));
+            page.setPd(pd);
+
+            List<PageData> list = trainInfoService.findAlllistPage(page);
+            if(list.size() > 0){
+                object.put(SUCCESS,TURE);
+                object.put("data",list);
+                object.put("pageId",pageIndex);
+                object.put("pageCount",page.getTotalPage());
+                object.put("recordCount",page.getTotalResult());
+            }else{
+                object.put(SUCCESS,"true");
+                object.put(MSG,"暂无数据");
+            }
+        }
+//删除方法
+        if("trainInfoDel".equals(cmd)){
+                pd.putAll(json);
+               List<PageData> result = trainInfoService.findById(pd);
+            if(result.size() <= 0) {
+                   object.put(SUCCESS, FALSE);
+                   object.put(MSG, "请核对传参是否正确");
+               }else {
+                  trainInfoService.deleteById(pd);
+                   if(trainInfoService.findById(pd).size() <= 0) {
+                       object.put(SUCCESS, TURE);
+                       object.put(MSG, "删除成功");
+                   }else{
+                       object.put(SUCCESS, FALSE);
+                       object.put(MSG, "删除失败");
+                   }
+               }
+        }
+//增加培训机构
+        if("trainInfoAdd".equals(cmd)){
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            pd.putAll(json);
+            pd.put("czman",pd_token.get("ZXYH"));
+            List<PageData> list = new ArrayList<PageData>();
+            list.add(pd);
+            int result = (int)trainInfoService.save(list);
+            if(result > 0){
+                object.put(SUCCESS, TURE);
+                object.put(MSG, "添加成功");
+            }else{
+                object.put(SUCCESS, TURE);
+                object.put(MSG, "添加失败");
+            }
+        }
+//修改培训机构
+            if("trainInfoUpdate".equals(cmd)){
+                pd.putAll(json);
+                List<PageData> train = trainInfoService.findById(pd);
+                if(train.size() > 0){
+                int result = (int)trainInfoService.update(pd);
+                if(result > 0 ){
+                    object.put(SUCCESS, TURE);
+                    object.put(MSG, "修改成功");
+                }else{
+                    object.put(SUCCESS, TURE);
+                    object.put(MSG, "修改失败");
+                }
+                }else{
+                    object.put(SUCCESS, TURE);
+                    object.put(MSG, "没有这个机构");
+                }
+            }
+
+        }catch (Exception e){
+            object.put("success", e.getMessage());
+            object.put("msg", "数据异常");
+        }finally {
+            return object;
+        }
+
+    }
+
+}

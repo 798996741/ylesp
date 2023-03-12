@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="personCountMapper">
+    <select id="jobregCount" parameterType="pd" resultType="pd">
+        SELECT COUNT(*) joregCount FROM
+        (SELECT DISTINCT job.uid FROM (SELECT * FROM tesp_jobreg WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        ) AS job) AS result
+    </select>
+
+    <select id="recruitCount" parameterType="pd" resultType="pd">
+        SELECT COUNT(*) AS recruitCount FROM tesp_tj WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+    </select>
+    <select id="sexCountlistPage" resultType="pd" parameterType="page">
+        SELECT (
+        SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.sex,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND sex = 1) AS re ) AS result) AS menCount,
+        ( SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.sex,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND sex = 2) AS re ) AS result
+        ) AS womanCount
+    </select>
+    <select id="ageCountlistPage" resultType="pd" parameterType="page">
+        SELECT (
+        SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.age,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND age &gt;= 16 AND age &lt;= 30) AS re ) AS result
+        ) AS '16to30Years',(
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.age,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND age &gt; 30 AND age &lt;= 45) AS re ) AS result
+        )
+        ) AS '30to45Years' ,(
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.age,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND age &gt; 45 AND age &lt;= 55) AS re ) AS result
+        )
+        ) AS '45to55Years' ,(
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.age,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND age &gt; 55) AS re ) AS result
+        )
+        ) AS 'Over55YearsOld'
+    </select>
+
+    <select id="xlCountlistPage" resultType="pd" parameterType="page">
+        SELECT
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.xl,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND xl IN (SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = 'czyx')) AS re ) AS result) AS
+        'juniorMiddleCount'
+        ,
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.xl,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND xl IN (SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = 'gzjzz')) AS re ) AS result) AS
+        'highSchoolCount'
+        ,
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.xl,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND xl IN (SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = 'dz')) AS re ) AS result) AS
+        'juniorCollegeCount'
+        ,
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.xl,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND xl IN (SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = 'bk')) AS re ) AS result) AS
+        'undergraduateCount'
+        ,
+        (SELECT COUNT(*) FROM (SELECT DISTINCT re.uid FROM (SELECT b.*,jr.czdate FROM (SELECT p.xl,p.uid FROM
+        (SELECT DISTINCT j.uid FROM tesp_jobreg j) AS j LEFT JOIN tesp_person p ON j.uid = p.uid) AS b
+        LEFT JOIN tesp_jobreg jr ON jr.uid = b.uid WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and czdate &lt; #{pd.endTime}
+        </if>
+        AND xl IN (SELECT dictionaries_id FROM sys_dictionaries WHERE name_en = 'yjsjys')) AS re ) AS result) AS
+        'graduateStudentCount'
+
+    </select>
+
+
+    <select id="jobCountlistPage" resultType="pd" parameterType="page">
+        SELECT COUNT(a.id) AS VALUE,b.gwf AS `name`
+        FROM tesp_jobreg a
+        LEFT JOIN (SELECT a.*,b.gwflname AS gwf FROM tesp_jobtype a LEFT JOIN tesp_jobtype b ON a.parent_code=b.code
+        WHERE b.gwflname IS NOT NULL) b
+        ON a.jobname=b.code WHERE b.gwf IS NOT NULL
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and a.czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and a.czdate &lt; #{pd.endTime}
+        </if>
+        GROUP BY `name` LIMIT 0,10
+    </select>
+</mapper>
+
+
+

@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TemplatesMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		S_TEMPLATE
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		NAME,
+		C_PHYSICSNAME,	
+		CREATEMAN,	
+		CREATEDATE,
+		FIELDLIST,	
+		TEMPLATE_ID,
+		STATE,
+		TYPE,
+		PARENT_ID,
+		TB_TYPE,
+		LEADER,
+		TREE_TYPE,
+		DISPLAY_TYPE,
+		ORDER_ID,
+		RELATION_TABLE,
+		SORT_ORDER,
+		SELECT_TYPE,
+		FA_TYPE
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{NAME},
+		#{C_PHYSICSNAME},
+		#{CREATEMAN},	
+		now(),
+		#{FIELDLIST},	
+		#{TEMPLATE_ID},
+		1,
+		#{TYPE},
+		#{PARENT_ID},
+		#{TB_TYPE},
+		#{LEADER},
+		#{TREE_TYPE},
+		#{DISPLAY_TYPE},
+		#{ORDER_ID},
+		#{RELATION_TABLE},
+		#{SORT_ORDER},
+		#{SELECT_TYPE},
+		#{FA_TYPE}
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into
+		<include refid="tableName"></include>
+		(
+		<include refid="Field"></include>
+		) values (
+		<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			TEMPLATE_ID = #{TEMPLATE_ID}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+		<include refid="tableName"></include>
+			set 
+				NAME = #{NAME,jdbcType=VARCHAR},
+				TYPE = #{TYPE,jdbcType=VARCHAR},
+				TB_TYPE = #{TB_TYPE,jdbcType=VARCHAR},
+				C_PHYSICSNAME = #{C_PHYSICSNAME,jdbcType=VARCHAR},
+				FIELDLIST = #{FIELDLIST,jdbcType=VARCHAR},
+				LEADER = #{LEADER,jdbcType=VARCHAR},
+				TREE_TYPE = #{TREE_TYPE,jdbcType=VARCHAR},
+				DISPLAY_TYPE = #{DISPLAY_TYPE,jdbcType=VARCHAR},
+				ORDER_ID = #{ORDER_ID,jdbcType=VARCHAR},
+				RELATION_TABLE = #{RELATION_TABLE,jdbcType=VARCHAR},
+				SORT_ORDER=#{SORT_ORDER,jdbcType=VARCHAR},
+				TEMPLATE_ID = #{TEMPLATE_ID,jdbcType=VARCHAR},
+				SELECT_TYPE =#{SELECT_TYPE,jdbcType=VARCHAR},
+				FA_TYPE =#{FA_TYPE,jdbcType=VARCHAR}
+			where 
+				TEMPLATE_ID = #{TEMPLATE_ID,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="findById" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			TEMPLATE_ID = #{TEMPLATE_ID}
+	</select>
+	
+	<!-- 通过C_PHYSICSNAME获取数据 -->
+	<select id="findByCPhysicsName" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			C_PHYSICSNAME = #{C_PHYSICSNAME}
+	</select>
+	
+	<!-- 通过NAME获取数据 -->
+	<select id="findByName" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			NAME = #{NAME}
+	</select>
+	
+	<!-- 通过类型获取数据 -->
+	<select id="findByType" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			TYPE = #{TYPE}
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+		NAME,
+		(select NAME from sys_dictionaries sd where sd.BIANMA = TYPE) DICTIONARIES_NAME,
+		TYPE,
+		C_PHYSICSNAME,	
+		CREATEMAN,
+		DATE_FORMAT(CREATEDATE,'%Y-%m-%d %H:%i:%S') as CREATEDATE,
+		TEMPLATE_ID,
+		PARENT_ID,
+		TB_TYPE,
+		LEADER,
+		TREE_TYPE,
+		DISPLAY_TYPE,
+		ORDER_ID,
+		FA_TYPE
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="pd.TB_TYPE != null and pd.TB_TYPE != ''">
+			and TB_TYPE = #{pd.TB_TYPE}
+		</if>
+		<if test="pd.TYPE != null and pd.TYPE != ''">
+			and TYPE = #{pd.TYPE}
+		</if>
+		<if test="pd.LEADER != null and pd.LEADER != ''">
+			and LEADER = #{pd.LEADER}
+		</if>
+		<if test="pd.TREE_TYPE != null and pd.TREE_TYPE != ''">
+			and TREE_TYPE = #{pd.TREE_TYPE}
+		</if>
+		<if test="pd.DISPLAY_TYPE != null and pd.DISPLAY_TYPE != ''">
+			and DISPLAY_TYPE = #{pd.DISPLAY_TYPE}
+		</if>
+		<if test="pd.FA_TYPE != null and pd.FA_TYPE != ''">
+			and FA_TYPE = #{pd.FA_TYPE}
+		</if>
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					NAME LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				<!--	根据需求自己加检索条件
+					字段1 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					字段2 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') 
+				-->
+				)
+		</if>
+		order by CREATEDATE desc
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 1=1
+		<if test="TYPE != null and TYPE != ''">
+			and TYPE = #{TYPE}
+		</if>
+	</select>
+	
+	<select id="getSetList" parameterType="pd" resultType="pd">
+		select no,${col} from ${tab}
+	</select>
+	
+	<select id="getSplitList" parameterType="pd" resultType="pd">
+		select id,${col} from ${tab}
+	</select>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			TEMPLATE_ID in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	<!-- 通过ID获取数据 -->
+	<select id="getRelationTableNum" parameterType="pd" resultType="pd">
+		select 
+			count(1) COUNT
+		from 
+		<include refid="tableName"></include>
+		where
+		 RELATION_TABLE LIKE 
+     	  CONCAT(CONCAT('%', #{C_PHYSICSNAME}),'%')
+	</select>
+	
+	
+	<!-- 通过类型获取数据 -->
+	<select id="getTemplatesByType" parameterType="pd" resultType="pd">
+		select 
+		<include refid="Field"></include>
+		from 
+		<include refid="tableName"></include>
+		where 
+			TYPE LIKE '${TYPE}%'
+	</select>
+	<!-- huangjianling -->
+</mapper>

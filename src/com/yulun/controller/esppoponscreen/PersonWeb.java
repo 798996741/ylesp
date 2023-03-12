@@ -1,0 +1,245 @@
+package com.yulun.controller.esppoponscreen;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang.StringUtils;
+
+import net.sf.json.JSONArray;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.service.system.appuser.AppuserManager;
+import com.fh.util.PageData;
+import com.fh.util.Tools;
+import com.yulun.service.CompanyManager;
+import com.yulun.service.PersonManager;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+
+/**
+ * 说明：通来电弹屏
+ * 创建人：351412933
+ * 创建时间：2020-04-08
+ */
+public class PersonWeb implements CommonIntefate {
+
+
+	@Resource(name="zxlbService")
+	private ZxlbManager zxlbService;
+
+	
+	@Resource(name="personService")
+	private PersonManager personService;
+	
+	@Resource(name="companyService")
+	private CompanyManager companyService;
+	
+	@Override
+	public JSONObject execute(JSONObject data, HttpServletRequest request)
+			throws Exception {
+		JSONObject object=new JSONObject();
+		try{
+			PageData pd = new PageData();
+			String cmd = data.getString("cmd")==null?"":data.getString("cmd");
+			PageData pd_stoken=new PageData();
+			JSONObject json = data.getJSONObject("data");
+			pd_stoken.put("TOKENID", json.get("tokenid"));
+			PageData pd_token=zxlbService.findByTokenId(pd_stoken);
+			if(pd_token!=null){
+				if(cmd.equals("personAll")){  //根据提交的方法执行相应的操作，获取知识库分页信息 
+					Page page = new Page();
+			        Integer pageIndex;
+			        Integer pageSize;
+			        List<PageData> list;
+			      
+					pd.put("name", json.getString("name")); 
+					pd.put("xl", json.getString("xl")); 
+					String tel = json.getString("tel") == null ? "" : json.getString("tel").replace("-", "");
+			        if ((tel.length() == 12) && (tel.startsWith("01"))) {
+			            tel = tel.substring(1, 12);
+			        }
+			        String lxtel = json.getString("lxtel") == null ? "" : json.getString("lxtel").replace("-", "");
+			        if ((lxtel.length() == 12) && (lxtel.startsWith("01"))) {
+			            lxtel = lxtel.substring(1, 12);
+			        }
+			        pd.put("lxtel", lxtel);
+			        pd.put("tel", tel);
+					pd.put("cardid", json.getString("cardid")); 
+					
+					pd.put("starttime", json.getString("startTime"));
+					if(json.getString("endTime")!=null&& !json.getString("endTime").equals("")){
+						pd.put("endtime",Tools.getEndTime(json.getString("endTime"), 1));
+					}
+					
+		            pageIndex = json.getInteger("pageIndex");
+		            page.setCurrentPage(pageIndex);
+		            pageSize = json.getInteger("pageSize");
+		            page.setShowCount(pageSize);
+		            page.setPd(pd);
+		            list =personService.listPage(page);
+		           // System.out.println(list);
+					if(list.size()>0){
+						object.put("success","true");
+						object.put("data",list);
+						object.put("pageId",pageIndex);
+						object.put("pageCount",page.getTotalPage());
+						object.put("recordCount",page.getTotalResult());
+					}else{
+						object.put("success","false");
+				        object.put("msg","暂无数据");
+					}
+				}else if(cmd.equals("personDel")) {
+				    pd.put("uid",json.get("uid"));
+			        pd.put("ucid",json.get("ucid"));
+					companyService.saveRecord(pd);
+					personService.deleteAll(pd);
+		        	object.put("success","true");
+				    object.put("msg","删除成功");
+				}else if(cmd.equals("personAdd")||cmd.equals("personEdit")) {
+				
+					pd.put("czman",pd_token.getString("ZXYH"));
+					pd.put("uid",json.get("uid"));
+				    pd.put("ucid",json.get("ucid"));
+				    companyService.saveRecord(pd);
+					pd.put("sex",json.get("sex"));
+					String tel = json.getString("tel") == null ? "" : json.getString("tel").replace("-", "");
+			        if ((tel.length() == 12) && (tel.startsWith("01"))) {
+			            tel = tel.substring(1, 12);
+			        }
+			        String lxtel = json.getString("lxtel") == null ? "" : json.getString("lxtel").replace("-", "");
+			        if ((lxtel.length() == 12) && (lxtel.startsWith("01"))) {
+			            lxtel = lxtel.substring(1, 12);
+			        }
+			        pd.put("tel", lxtel);
+			        pd.put("lxtel", lxtel);
+			        pd.put("name",json.get("name"));
+			        pd.put("email", json.getString("email")); 
+			        pd.put("addr",json.getString("addr"));
+			        pd.put("cardid",json.getString("cardid"));
+			        pd.put("email",json.get("email")); 
+			        pd.put("age",json.get("age")); 
+			        pd.put("jg",json.get("jg")); 
+			        pd.put("isjob",json.get("isjob")); 
+			        pd.put("isinsuran",json.get("isinsuran"));
+			        pd.put("location",json.get("location"));
+					pd.put("qzqd",json.getString("qzqd"));
+					pd.put("bylxtel",json.getString("bylxtel"));
+					pd.put("bylxr",json.getString("bylxr"));
+			        pd.put("xl",json.get("xl")); 
+			        pd.put("zy",json.get("zy")); 
+			        pd.put("cate",json.get("cate"));
+
+			     
+					PageData pd_person=personService.findByUid(pd);
+					if(pd_person!=null&&pd_person.getString("uid")!=null){
+						personService.edit(pd);
+					}else{
+						personService.save(pd);
+					}
+			        object.put("success","true");
+				    object.put("msg","保存成功");
+				}else if(cmd.equals("personFindById")) {
+			        pd.put("uid",json.get("uid"));
+			        PageData pdperson=personService.findByUid(pd);
+			        if(pdperson!=null&&pdperson.get("id")!=null){
+						object.put("success","true");
+						object.put("data",pdperson);
+					}else{
+						object.put("success","false");
+				        object.put("msg","暂无数据");
+					}
+				}else if(cmd.equals("personFindByTel")) {
+			        pd.put("uid",json.get("uid"));
+			        String tel = json.getString("tel") == null ? "" : json.getString("tel").replace("-", "");
+			        if ((tel.length() == 12) && (tel.startsWith("01"))) {
+			            tel = tel.substring(1, 12);
+			        }
+			        
+			        pd.put("tel", tel);
+			        
+			        PageData pdperson=personService.findByTel(pd);
+			        
+			        JSONObject object_com=new JSONObject();
+			        if((pdperson!=null&&pdperson.get("id")!=null)||pdperson!=null){
+			        	object_com.put("person", pdperson);
+			        	object_com.put("person", pdperson);
+						object.put("success","true");
+						object.put("data",pdperson);
+					}else{
+						object.put("success","false");
+				        object.put("msg","暂无数据");
+					}
+				}else if("getdict".equals(cmd)){
+					pd.putAll(json);
+					Page page = new Page();
+					page.setShowCount(99999);
+					page.setCurrentPage(1);
+					page.setPd(pd);
+					String parentid = pd.getString("parentid");
+					if(parentid == null || parentid =="") {
+						object.put("success","false");
+						object.put("msg","入参错误");
+					}else {
+						List<PageData> list = personService.findDicByParentidlistPage(page);
+						if(list.size()<=0){
+//							object.put("success","false");
+//							object.put("msg","暂无数据");
+						}else{
+							String level = json.getString("level");
+							if(level != null && !"".equals(level)) {
+								if (level.equals("2")) {
+									for (PageData pageData : list) {
+										Page newPage = new Page();
+										PageData newPagedata = new PageData();
+										String id = pageData.getString("DICTIONARIES_ID");
+										newPagedata.put("parentid", id);
+										newPage.setPd(newPagedata);
+										List<PageData> clist = personService.findDicByParentidlistPage(newPage);
+										pageData.put("children", clist);
+									}
+								}
+							}
+							object.put("success","true");
+							object.put("data",list);
+						}
+					}
+				} else{
+					object.put("success","false");
+			        object.put("msg","访问异常");
+				}
+			}else{
+				object.put("success","false");
+				object.put("msg","登录超时，请重新登录");
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+			if(e.getMessage().indexOf("Duplicate")>=0){
+				object.put("success","false");
+				object.put("msg","请勿插入重复数据");
+			}else{
+				object.put("success","false");
+				object.put("msg","操作异常");
+			}
+
+		}
+        return object;
+	}
+
+	
+	
+	 public String getTime() {
+        Date date = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(date);
+    }
+
+}
+

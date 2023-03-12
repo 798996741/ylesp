@@ -1,0 +1,8 @@
+package com.yulun.service;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-21 17:15
+ **/
+public interface CompanyCountManager {
+}

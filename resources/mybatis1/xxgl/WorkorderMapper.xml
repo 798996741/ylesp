@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="workorderMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		t_workorder
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		code,
+		tsdate,
+		tssource,
+		tsman,
+		tstel,
+		tscont,
+		tslevel,
+		tsdept,
+		tstype,	
+		tsclassify,	
+		dealman,	
+		ishf,
+		endtime,
+		endreason,
+		type,
+		cardid,
+		cjdate,
+		hbh,
+		uid,
+		clsx,
+		kscl,
+		czman,
+		czdate,
+		proc_id,
+		workid,
+		cfbm,
+		ucid,
+		caseCode,
+		iszx
+		
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{code},
+		#{tsdate},
+		#{tssource},
+		#{tsman},
+		#{tstel},
+		#{tscont},
+		#{tslevel},
+		#{tsdept},
+		#{tstype},	
+		#{tsclassify},	
+		#{dealman},	
+		#{ishf},
+		#{endtime},
+		#{endreason},
+		#{type},
+		#{cardid},
+		#{cjdate},
+		#{hbh},
+		#{uid},
+		#{clsx},
+		#{kscl},
+		#{czman},
+		now(),
+		#{proc_id},
+		#{workid},
+		#{cfbm},
+		#{ucid},
+		#{caseCode},
+		#{iszx}
+		
+	</sql>
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	
+	<!-- 新增-->
+	<insert id="saveDb" parameterType="pd">
+		insert into 
+		t_workorder_receive
+		(
+			mainId,
+			biaoTiName,
+			caseCode,
+			caseNumber,
+			matterSrc,
+			doMan,
+			doManName,
+			matterType,
+			repTime,
+			repMan,
+			repTel,
+			location,
+			matterDescription,
+			completeTimeAsk,
+			dueTime,
+			surpTimeAsk,
+			zhandian,
+			lastFlowId,
+			paiFaStutas,
+			recvUnitId,
+			recvUnitName,
+			recvDeptId,
+			recvDeptName,
+			recvPostId,
+			recvPostName,
+			recvUserId,
+			recvUserName,
+			approveStatus,
+			status,
+			dispatchDate,
+			chrUnitList,
+			doUnit,
+			doUnitCode,
+			shenHeFlag,
+			yanQi,
+			guaQi,
+			taskId,
+			supervise,
+			wxOpenId,
+			wxType,
+			updatetime,
+			wgsLat,
+			wgsLng,
+			hkLat,
+			hkLng,
+			statusId,
+			replyPoint,
+			doneReport,
+			satcode,
+			satresult,
+			solved,
+			replyTime,
+			firstContact,
+			firstContactTel,
+			isReview,
+			isCanReview,
+			reviewBoundary,
+			backTime,
+			backFlag,
+			isLinkage,
+			userid,
+			postid
+		) values (
+			#{mainId},
+			#{biaoTiName},
+			#{caseCode},
+			#{caseNumber},
+			#{matterSrc},
+			#{doMan},
+			#{doManName},
+			#{matterType},
+			#{repTime},
+			#{repMan},
+			#{repTel},
+			#{location},
+			#{matterDescription},
+			#{completeTimeAsk},
+			#{dueTime},
+			#{surpTimeAsk},
+			#{zhandian},
+			#{lastFlowId},
+			#{paiFaStutas},
+			#{recvUnitId},
+			#{recvUnitName},
+			#{recvDeptId},
+			#{recvDeptName},
+			#{recvPostId},
+			#{recvPostName},
+			#{recvUserId},
+			#{recvUserName},
+			#{approveStatus},
+			#{status},
+			#{dispatchDate},
+			#{chrUnitList},
+			#{doUnit},
+			#{doUnitCode},
+			#{shenHeFlag},
+			#{yanQi},
+			#{guaQi},
+			#{taskId},
+			#{supervise},
+			#{wxOpenId},
+			#{wxType},
+			#{updatetime},
+			#{wgsLat},
+			#{wgsLng},
+			#{hkLat},
+			#{hkLng},
+			#{statusId},
+			#{replyPoint},
+			#{doneReport},
+			#{satcode},
+			#{satresult},
+			#{solved},
+			#{replyTime},
+			#{firstContact},
+			#{firstContactTel},
+			#{isReview},
+			#{isCanReview},
+			#{reviewBoundary},
+			#{backTime},
+			#{backFlag},
+			#{isLinkage},
+			#{userid},
+			#{postid}
+		)
+	</insert>
+	
+	<!-- 通过id获取数据 -->
+	<select id="findDbByid" parameterType="pd" resultType="pd">
+		select 
+			a.*
+		from 
+			t_workorder_receive a  
+		where  1=1  
+		<if test="mainId!= null and mainId!= ''">
+		  and a.mainId = #{mainId}
+		</if>
+	</select>
+	
+	<!-- 通过id获取数据 -->
+	<select id="findDbByCasecode" parameterType="pd" resultType="pd">
+		select 
+			a.*
+		from 
+			t_workorder_receive a  
+		where  1=1  
+		<if test="caseCode!= null and caseCode!= ''">
+		  and a.caseCode = #{caseCode}
+		</if>
+	</select>
+	
+	
+	
+	<insert id="saveWorkProc" parameterType="pd">
+		insert into 
+		t_workorder_proc
+		(
+			workid,proc_id,czdate
+		) values (
+			#{workid},
+			#{proc_id},
+			now()
+		
+		)
+	</insert>
+	
+	<update id="editWorkproc" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+			proc_id=#{proc_id}
+		where 
+		workid = #{workid}
+	</update>
+	
+	
+	
+	
+	
+	<!-- 删除-->
+	<delete id="delete" parameterType="pd">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id = #{id}
+	</delete>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			
+			tsdate=#{tsdate},
+			tssource=#{tssource},
+			tsman=#{tsman},
+			tstel=#{tstel},
+			tscont=#{tscont},
+			tslevel=#{tslevel},
+			tsdept=#{tsdept},
+			tstype=#{tstype},	
+			tsclassify=#{tsclassify},	
+			
+			type=#{type},
+			cardid=#{cardid},
+			cjdate=#{cjdate},
+			hbh=#{hbh},
+			clsx=#{clsx},
+			ishf=#{ishf},
+			endreason=#{endreason},
+			cfbm=#{cfbm}
+		where 
+		id = #{id}
+	</update>
+	
+	<!-- 修改 -->
+	<update id="editCL" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			endtime=now(),
+			dealman=#{dealman},
+			cljd=#{cljd},
+			type=#{type}
+		where 
+		uid = #{uid}
+	</update>
+	
+	<!-- 修改 -->
+	<update id="zxPf" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			iszx=2
+		where 
+		uid = #{uid}
+	</update>
+	<!-- 修改 -->
+	<update id="editTsdept" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+			tsdept=#{newtsdept}
+		where 
+		id = #{id}
+	</update>
+	
+	<!-- 新增-->
+
+	
+	<insert id="saveTsdept" parameterType="pd">
+		insert into 
+		t_workorder_dept
+		(
+		orderid,tsdept,czdate,newtsdept
+		) values (
+		#{id},#{tsdept},now(),#{newtsdept}
+		)
+	</insert>
+	
+	<!-- 修改 -->
+	<update id="editCLByuid" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			
+			dealman=#{dealman},
+			cljd=#{cljd},
+			type=#{type}
+		where 
+		uid = #{uid}
+	</update>
+	
+	<!-- 修改 -->
+	<update id="editCfbm" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+  			
+			cfbm=#{cfbm}
+		where 
+		id = #{id}
+	</update>
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByid" parameterType="pd" resultType="pd">
+		select 
+		a.*,
+		b.name as tssourcename,
+		c.name as tslevelname,
+		d.name as tstypename,
+		e.name as tsclassifyname,
+		group_concat(f.name) as tsdeptname,
+		g.name as tsbigtype,
+		g.DICTIONARIES_ID as bigtype
+		 from 
+		<include refid="tableName"></include> a  
+		left join SYS_DICTIONARIES b on a.tssource=b.DICTIONARIES_ID
+		left join T_AREA f on find_in_set (f.area_code,a.tsdept)
+		left join SYS_DICTIONARIES c on a.tslevel=c.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.tstype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES e on a.tsclassify=e.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on d.parent_id=g.DICTIONARIES_ID
+		where 
+		1=1  
+		<if test="id!= null and id!= ''">
+		  and	a.id = #{id}
+		</if>
+		<if test="proc_id!= null and proc_id!= ''">
+			and a.proc_id = #{proc_id}
+		</if>
+		<if test="code!= null and code!= ''">
+		  and	a.code = #{code}
+		</if>
+	</select>
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select t.*,concat(i.name) as cljdname from (
+			select
+				a.*,  
+				b.name as tssourcename,
+				c.name as tslevelname,
+				d.name as tstypename,
+				e.name as tsclassifyname,
+				group_concat(f.name) as tsdeptname,
+				g.name as tsbigtype
+				
+			
+			 from 
+			<include refid="tableName"></include> a  
+			left join SYS_DICTIONARIES b on a.tssource=b.DICTIONARIES_ID
+			inner join T_AREA f on find_in_set (f.area_code,a.tsdept)
+			left join SYS_DICTIONARIES c on a.tslevel=c.DICTIONARIES_ID
+			left join SYS_DICTIONARIES d on a.tstype=d.DICTIONARIES_ID
+			left join SYS_DICTIONARIES e on a.tsclassify=e.DICTIONARIES_ID
+			left join SYS_DICTIONARIES g on d.parent_id=g.DICTIONARIES_ID
+			
+			left join sys_user j on a.czman=j.username
+			where 1=1
+			
+			<if test="pd.tssource!= null and pd.tssource != ''">
+				and a.tssource=#{pd.tssource}
+			</if>
+			<if test="pd.czman!= null and pd.czman != ''">
+				and a.czman=#{pd.czman}
+			</if>
+			<if test="pd.starttime!= null and pd.starttime!= ''">
+				and a.tsdate &gt;= #{pd.starttime} 
+			</if>
+			<if test="pd.endtime!= null and pd.endtime!= ''">
+				and a.tsdate &lt;= #{pd.endtime} 
+			</if>
+			<if test="pd.tsman!= null and pd.tsman != ''">
+				and a.tsman LIKE CONCAT(CONCAT('%', #{pd.tsman}),'%')
+			</if>
+			<if test="pd.tsdept!= null and pd.tsdept != ''">
+				and find_in_set(a.tsdept,#{pd.tsdept})
+			</if>
+			
+			<if test="pd.tstype!= null and pd.tstype!= ''">
+				and a.tstype=#{pd.tstype}
+			</if>
+			<if test="pd.iszx==1">
+				and a.iszx=#{pd.iszx}
+			</if>
+			
+			
+			
+			<if test="pd.iszx== 0">
+				and (a.iszx=2 or a.iszx=0 or a.iszx is null or a.iszx='')
+			</if>
+			
+			
+			<if test="pd.bigtstype!= null and pd.bigtstype!= ''">
+				and find_in_set(a.tstype,(select DICTIONARIES_ID from sys_dictionaries where parent_id=#{pd.bigtstype}))
+			</if>
+			
+			<if test="pd.code!= null and pd.code!= ''">
+				and a.code LIKE CONCAT(CONCAT('%', #{pd.code}),'%')
+			</if>
+			<if test="pd.endreason!= null and pd.endreason!= ''">
+				and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+			</if>
+			<if test="pd.types!= null and pd.types!= ''">
+				and a.type=#{pd.types}
+			</if>
+			<if test="pd.type!= null and pd.type== 'all'">
+				and (a.type='0' or a.type='' or a.type is null or a.type='1' or a.type='2' or a.type='3'  or a.type='4' or a.type='5')
+			</if>
+			<if test="pd.type!= null and pd.type!='all'">
+				and a.type=#{pd.type}
+			</if>
+			<if test="pd.tsclassify!= null and pd.tsclassify!= ''">
+				and a.tsclassify=#{pd.tsclassify}
+			</if>
+			
+			<if test="pd.dpf!= null and pd.dpf!= ''">
+				and (a.proc_id is null or a.proc_id='') and a.type!='4'
+			</if>
+			
+			<if test="pd.endreason!= null and pd.endreason != ''">
+				and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+			</if>
+			<if test="pd.userdwbm!= null and pd.userdwbm != ''">
+				and j.dwbm LIKE CONCAT(#{pd.userdwbm},'%')
+			</if>
+			<if test="pd.dwbm!= null and pd.dwbm != ''">
+				and (
+					a.tsdept LIKE CONCAT(#{pd.dwbm},'%') or a.tsdept LIKE CONCAT(CONCAT('%', #{pd.dwbm}),'%') or j.dwbm LIKE CONCAT(#{pd.dwbm},'%')
+					<if test="pd.dwbm!= null and pd.dwbm == '35'">
+						or a.tsdept is null	OR a.tsdept=''
+					</if>
+					<if test="pd.dwbm!= null and pd.dwbm == '3501'">
+						or a.tsdept is null	OR a.tsdept=''
+					</if>
+					<if test="pd.dwbm!= null and pd.dwbm == '350101'">
+						or a.tsdept is null	OR a.tsdept=''
+					</if>
+				) 
+			</if>
+			group by a.id
+			order by a.czdate desc
+		) t 
+		
+		left join T_AREA i on find_in_set (i.area_code,t.cljd)
+		where 1=1  
+		
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					tsbigtype LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					tstypename LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or 
+					tssourcename LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					 or
+					tscont LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or
+					tsman LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or
+					code LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			
+					or
+					tsdeptname LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		group by t.id
+		order by t.czdate desc
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="listAll" parameterType="pd" resultType="pd">
+		select
+		a.*,  
+		b.name as tssourcename,
+		c.name as tslevelname,
+		d.name as tstypename,
+		e.name as tsclassifyname,
+		f.name as tsdeptname,
+		g.name as tsbigtype,
+		i.name as cljdname
+		
+		 from 
+		<include refid="tableName"></include> a  
+		left join SYS_DICTIONARIES b on a.tssource=b.DICTIONARIES_ID
+		left join SYS_DICTIONARIES f on a.tsdept=f.DICTIONARIES_ID
+		left join SYS_DICTIONARIES c on a.tslevel=c.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.tstype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES e on a.tsclassify=e.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on d.parent_id=g.DICTIONARIES_ID
+		left join T_AREA i on a.cljd=i.AREA_CODE
+		where 1=1
+		
+		<if test="tssource!= null and tssource != ''">
+			and a.tssource=#{tssource}
+		</if>
+		<if test="starttime!= null and starttime!= ''">
+			and a.tsdate &gt;= #{starttime} 
+		</if>
+		<if test="endtime!= null and endtime!= ''">
+			and a.tsdate &lt;= #{endtime} 
+		</if>
+		<if test="tsman!= null and tsman != ''">
+			and a.tsman LIKE CONCAT(CONCAT('%', #{tsman}),'%')
+		</if>
+		<if test="tsdept!= null and tsdept != ''">
+			and find_in_set(#{tsdept},a.tsdept)
+		</if>
+		<if test="dwbm!= null and dwbm != ''">
+			and (a.tsdept LIKE CONCAT(#{dwbm},'%') or a.tsdept LIKE CONCAT(CONCAT('%', #{dwbm}),'%'))
+		</if>
+		
+		<if test="tstype!= null and tstype!= ''">
+			and a.tstype=#{tstype}
+		</if>
+		
+		<if test="code!= null and code!= ''">
+			and a.code LIKE CONCAT(CONCAT('%', #{code}),'%')
+		</if>
+		<if test="endreason!= null and endreason!= ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{endreason}),'%')
+		</if>
+		
+		<if test="type!= null and type== 'all'">
+			and (a.type='0' or a.type='' or a.type is null or a.type='1' or a.type='2' or a.type='3'  or a.type='4' or a.type='5')
+		</if>
+		<if test="type!= null and type!='all'">
+			and a.type=#{type}
+		</if>
+		<if test="tsclassify!= null and tsclassify!= ''">
+			and a.tsclassify=#{tsclassify}
+		</if>
+		
+		<if test="endreason!= null and endreason != ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{endreason}),'%')
+		</if>
+		
+		order by a.code desc
+	</select>
+	
+	
+	<!-- 新增-->
+	<insert id="saveFile" parameterType="pd">
+		insert into 
+		t_workorderfile
+		(
+		uid,file,name,ext,createman,createdate,filename
+		) values (
+		#{uid},#{file},#{name},#{ext},#{createman},now(),#{filename}
+		)
+	</insert>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteFile" parameterType="String">
+		delete from
+			t_workorderfile
+		where 
+			id =#{id}
+	</delete>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAllFile" parameterType="String">
+		delete from
+			t_workorderfile
+		where 
+			uid =#{uid}
+	</delete>
+	
+	<!-- 通过id获取数据 -->
+	<select id="findFileByuid" parameterType="pd" resultType="pd">
+		select 
+			a.*,c.name as deptname
+		 from 
+		 t_workorderfile a
+		 left join sys_user b on a.createman=b.username
+		  left join t_area c on b.dwbm=c.area_code
+		where 
+			uid = #{uid}
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findFileById" parameterType="pd" resultType="pd">
+		select 
+			*
+		 from 
+		 t_workorderfile
+		where 
+			id = #{id}
+	</select>
+	
+	<!-- 列表(全部) -->
+	<select id="gdCount" parameterType="pd" resultType="pd">
+		select
+			count(*) as count
+		 from 
+		<include refid="tableName"></include> a  
+		left join SYS_DICTIONARIES b on a.tssource=b.DICTIONARIES_ID
+		left join SYS_DICTIONARIES f on a.tsdept=f.DICTIONARIES_ID
+		left join SYS_DICTIONARIES c on a.tslevel=c.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.tstype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES e on a.tsclassify=e.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on d.parent_id=g.DICTIONARIES_ID
+		where 1=1
+		
+		<if test="type!= null and type=='0'">
+			and a.type=#{type}
+		</if>
+		<if test="type!= null and type=='1'">
+			and (a.type='1' or a.type='2') 
+		</if>
+		<if test="type!= null and type=='3'">
+			and  a.type='3'
+		</if>
+		<if test="type!= null and type!='4'">
+			and a.type=#{type}
+		</if>
+	</select>
+	
+
+	<update id="editCode" parameterType="pd">
+		update t_code 
+		set 
+			<if test="code_num != null and code_num != ''">
+				code_num = #{code_num}
+			</if>
+		where 
+			year = #{year}
+	</update>
+
+	<select id="findByYear" parameterType="pd" resultType="pd">
+		select 
+			year, code_num
+		from 
+			t_code
+		where 
+			year = #{year}
+	</select>
+
+	<insert id="saveCode" parameterType="pd">
+		insert into t_code
+		(
+			year,
+			code_num
+		) values (
+			#{year},
+			#{code_num}
+		)
+	</insert>
+
+	<!-- 批量删除 -->
+	<delete id="deleteAll" parameterType="String">
+		delete from
+		<include refid="tableName"></include>
+		where 
+			id in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                 #{item}
+		</foreach>
+	</delete>
+	
+	
+	
+	
+</mapper>

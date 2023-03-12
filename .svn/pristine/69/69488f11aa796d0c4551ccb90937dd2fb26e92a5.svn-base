@@ -1,0 +1,29 @@
+package com.yulun.service;
+
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+
+import java.util.List;
+
+public interface JobReferManager {
+    public List<PageData> recruitlistPage(Page pd) throws Exception;
+    public List<PageData> getjoblistPage(Page pd) throws Exception;
+    public void insertperson(PageData pd) throws Exception;
+    public void updateperson(PageData pd) throws Exception;
+    public void deleteperson(PageData pd) throws Exception;
+
+    public List<PageData> findjoblistPage(Page pd) throws Exception;
+    public void insertjobreg(PageData pd) throws Exception;
+    public void updatejobreg(PageData pd) throws Exception;
+    public void deletejobreg(PageData pd) throws Exception;
+
+    public List<PageData> JobreferlistPage(Page pd) throws Exception;
+    public List<PageData> PersonreferlistPage(Page pd) throws Exception;
+    public PageData findperson(PageData pd) throws Exception;
+
+    public List<PageData> findaddrlistPage(Page pd) throws Exception;
+    public void insertaddr(PageData pd) throws Exception;
+    public void updateaddr(PageData pd) throws Exception;
+    public void deleteaddr(PageData pd) throws Exception;
+
+}

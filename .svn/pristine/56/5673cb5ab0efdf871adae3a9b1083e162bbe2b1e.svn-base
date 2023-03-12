@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="otherServiceMapper">
+    <sql id="table">
+        `tesp_qtfw`
+    </sql>
+    <select id="findAlllistPage" resultType="pd"  parameterType="page">
+        SELECT final.*,IF(`type` = 1, '企业', (SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = cate)) AS `typename` FROM (
+        SELECT q.uid, DATE_FORMAT(q.czdate, "%Y-%m-%d %T") AS `czdate`, q.fwname
+        , (
+        SELECT `name`
+        FROM sys_dictionaries
+        WHERE dictionaries_id = q.fwtype
+        ) AS fwtypename, q.fwtype, q.isjd
+        , IF(q.type = 1, (
+        SELECT `name`
+        FROM tesp_company c
+        WHERE q.uid = c.uid
+        ), (
+        SELECT `name`
+        FROM tesp_person p
+        WHERE q.uid = p.uid
+        )) AS `name`
+        ,
+        (SELECT `cate`
+        FROM tesp_person c
+        WHERE q.uid = c.uid) cate,
+        q.type,q.remark
+        FROM tesp_qtfw q WHERE 1=1) final where 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and  `czdate` &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and `czdate` &lt;  #{pd.endTime}
+        </if>
+        <if test="pd.fwname != null and pd.fwname != ''">
+            and `fwname` like  CONCAT('%',#{pd.fwname},'%')
+        </if>
+        <if test="pd.isjd != null and pd.isjd != ''">
+            and `isjd` =#{pd.isjd}
+        </if>
+        <if test="pd.fwtype != null and pd.fwtype != ''">
+            and `fwtype` = #{pd.fwtype}
+        </if>
+        <if test="pd.name != null and pd.name != ''">
+            and `name`  CONCAT('%',#{pd.name},'%')
+        </if>
+        <if test="pd.type != null and pd.type != ''">
+            and `type` = #{pd.type}
+        </if>
+        <if test="pd.uid != null and pd.uid != ''">
+            and `uid` = #{pd.uid}
+        </if>
+
+        order by czdate desc
+    </select>
+
+    <select id="findSummarylistPage" resultType="pd"  parameterType="page">
+        SELECT COUNT(uid) serverCount,czdate,`name`,`type`,GROUP_CONCAT(fwname) fwname,GROUP_CONCAT(fwtypename) fwtypename,remark,isjd,
+        IF(`type` = 1, '企业', (SELECT `name` FROM sys_dictionaries WHERE DICTIONARIES_ID = cate)) AS `typename` FROM
+        (SELECT q.uid, DATE_FORMAT(q.czdate, "%Y-%m-%d %T") AS `czdate`, q.fwname
+        , (
+        SELECT `name`
+        FROM sys_dictionaries
+        WHERE dictionaries_id = q.fwtype
+        ) AS fwtypename, q.fwtype, q.isjd
+        , IF(q.type = 1, (
+        SELECT `name`
+        FROM tesp_company c
+        WHERE q.uid = c.uid
+        ), (
+        SELECT `name`
+        FROM tesp_person p
+        WHERE q.uid = p.uid
+        )) AS `name`
+        , q.type,q.remark,
+        (SELECT `cate`
+        FROM tesp_person c
+        WHERE q.uid = c.uid) cate
+        FROM tesp_qtfw q WHERE 1 = 1
+    <if test="pd.startTime!=null and pd.startTime!=''">
+        and  `czdate` &gt; #{pd.startTime}
+    </if>
+    <if test="pd.endTime!=null and pd.endTime!=''">
+        and `czdate` &lt;  #{pd.endTime}
+    </if>
+    <if test="pd.fwname != null and pd.fwname != ''">
+        and `fwname` like  CONCAT('%',#{pd.fwname},'%')
+    </if>
+    <if test="pd.fwtype != null and pd.fwtype != ''">
+        and `fwtype` = #{pd.fwtype}
+    </if>
+    <if test="pd.name != null and pd.name != ''">
+        and `name` like  CONCAT('%',#{pd.name},'%')
+    </if>
+        <if test="pd.type != null and pd.type != ''">
+            and `type` = #{pd.type}
+        </if>
+    <if test="pd.isjd != null and pd.isjd != ''">
+        and `isjd` =#{pd.isjd}
+    </if>
+    ORDER BY q.czdate DESC) result
+    GROUP BY uid ORDER BY czdate DESC
+    </select>
+</mapper>
+
+
+

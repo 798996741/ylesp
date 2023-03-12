@@ -1,0 +1,642 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="RuprocdefMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		ACT_RU_TASK
+	</sql>
+	
+	<!--流程实例表 --> 
+	<sql id="ptableName">
+		ACT_RE_PROCDEF
+	</sql>
+	
+	<!--流程变量表 -->
+	<sql id="vartableName">
+		ACT_RU_VARIABLE
+	</sql>
+	
+	<!--历史任务节点表 -->
+	<sql id="hitinsttableName">
+		ACT_HI_ACTINST
+	</sql>
+	
+	<!--历史任务表 -->
+	<sql id="hitasktableName">
+		ACT_HI_TASKINST
+	</sql>
+	
+	<!--历史流程变量表 -->
+	<sql id="hivartableName">
+		ACT_HI_VARINST
+	</sql>
+	
+	<!--历史流程实例表 -->
+	<sql id="hpvartableName">
+		ACT_HI_PROCINST
+	</sql>
+	
+	<!-- 待办任务 or正在运行任务列表-->
+	<select id="datalist" parameterType="page" resultType="pd">
+		select
+			f.*,
+			p.NAME_ PNAME_,
+			p.DGRM_RESOURCE_NAME_,
+			a.code,a.tsdate,a.tssource,a.tsman,
+			a.tstel,
+			a.tscont,
+			a.tslevel,
+			a.tsdept,
+			a.tstype,	
+			a.tsclassify,	
+			a.dealman,	
+			a.ishf,
+			a.endtime,
+			a.endreason,
+			a.type,
+			a.cardid,
+			a.cjdate,
+			a.hbh,
+			a.uid,
+			a.clsx,
+			a.kscl,
+			a.czman,
+			a.czdate,
+			a.proc_id,
+			a.id as workid,
+			b.name as tssourcename,
+			c.name as tslevelname,
+			d.name as tstypename,
+			e.name as tsclassifyname,
+			group_concat(j.name) as tsdeptname,
+			g.name as tsbigtype,
+			i.name as cljdname
+		from 
+		<include refid="tableName"></include> f
+		left join
+		<include refid="ptableName"></include> p
+		on f.PROC_DEF_ID_ = p.ID_
+		left join t_workorder a 
+		on f.PROC_INST_ID_ = a.proc_id
+		left join SYS_DICTIONARIES b on a.tssource=b.DICTIONARIES_ID
+		left join T_AREA j on find_in_set (j.area_code,a.tsdept)
+		left join SYS_DICTIONARIES c on a.tslevel=c.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.tstype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES e on a.tsclassify=e.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on d.parent_id=g.DICTIONARIES_ID
+		left join T_AREA i on a.cljd=i.AREA_CODE
+		where 1=1
+		and a.code is not null and a.type!='4'
+		<if test="pd.DWBM2!= null and pd.DWBM2 != ''">
+			and not exists ( select * from act_ru_dept_deal t where a.proc_id=t.proc_id and t.dept=${pd.DWBM2} and isdel='0' and iscl='1')
+		</if>
+		<if test="pd.DWBM1!= null and pd.DWBM1 != ''">
+			and not exists ( select * from act_ru_dept_deal t where a.proc_id=t.proc_id and t.dept=${pd.DWBM1} and isdel='0' and iscl='2')
+		</if>
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					p.NAME_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or 
+					f.NAME_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or 
+					f.ASSIGNEE_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		<if test="pd.lastStart != null and pd.lastStart != ''"><!-- 开始时间检索 -->
+			and f.CREATE_TIME_ &gt;= #{pd.lastStart} 
+		</if>
+		<if test="pd.lastEnd != null and pd.lastEnd != ''"><!-- 结束时间检索 -->
+			and f.CREATE_TIME_ &lt;= #{pd.lastEnd} 
+		</if>
+		
+			<if test="pd.USERNAME != null and pd.USERNAME != '' and (pd.DWBM == '' or pd.DWBM ==null )"><!-- 当前办理人检索 -->
+				and 
+					FIND_IN_SET(#{pd.USERNAME},f.ASSIGNEE_) 
+			</if>
+			<if test="pd.DWBM!= null and pd.DWBM != '' and  (pd.USERNAME == '' or pd.USERNAME==null)">
+				and FIND_IN_SET(${pd.DWBM},f.ASSIGNEE_)
+			</if>
+		
+			<if test="pd.USERNAME != null and pd.USERNAME != '' and  pd.DWBM!= null and pd.DWBM != ''"><!-- 当前办理人检索 -->
+				and 
+					(FIND_IN_SET(#{pd.USERNAME},f.ASSIGNEE_) or FIND_IN_SET(${pd.DWBM},f.ASSIGNEE_))
+			</if>
+			
+		<if test="pd.tssource!= null and pd.tssource != ''">
+			and a.tssource=#{pd.tssource}
+		</if>
+		<if test="pd.starttime!= null and pd.starttime!= ''">
+			and a.tsdate &gt;= #{pd.starttime} 
+		</if>
+		
+		
+		<if test="pd.timelimittype!= null and pd.timelimittype== '24H'">
+			and clsx=#{pd.timelimittype} 
+			and TIMESTAMPDIFF(MINUTE,a.tsdate,now())>#{pd.timelimit}
+		</if>
+		<if test="pd.timelimittype!= null and pd.timelimittype!= '24H'">
+			and clsx=#{pd.timelimittype} 
+			and TIMESTAMPDIFF(MINUTE,f.CREATE_TIME_,now())>#{pd.timelimit}
+		</if>
+		<if test="pd.endtime!= null and pd.endtime!= ''">
+			and a.tsdate &lt;= #{pd.endtime} 
+		</if>
+		<if test="pd.tsman!= null and pd.tsman != ''">
+			and a.tsman LIKE CONCAT(CONCAT('%', #{pd.tsman}),'%')
+		</if>
+		<if test="pd.tsdept!= null and pd.tsdept != ''">
+			and find_in_set(a.tsdept,#{pd.tsdept})
+		</if>
+		
+		<if test="pd.tstype!= null and pd.tstype!= ''">
+			and a.tstype=#{pd.tstype}
+		</if>
+		
+		<if test="pd.bigtstype!= null and pd.bigtstype!= ''">
+			and find_in_set(a.tstype,(select DICTIONARIES_ID from sys_dictionaries where parent_id=#{pd.bigtstype}))
+		</if>
+		
+		<if test="pd.code!= null and pd.code!= ''">
+			and a.code LIKE CONCAT(CONCAT('%', #{pd.code}),'%')
+		</if>
+		<if test="pd.endreason!= null and pd.endreason!= ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+		</if>
+		
+		<if test="pd.type!= null and pd.type== 'all'">
+			and (a.type='0' or a.type='' or a.type is null or a.type='1' or a.type='2' or a.type='3'  or a.type='4' or a.type='5')
+		</if>
+		<if test="pd.type!= null and pd.type!= '' and pd.type!='all'">
+			and a.type=#{pd.type}
+		</if>
+		<if test="pd.tsclassify!= null and pd.tsclassify!= ''">
+			and a.tsclassify=#{pd.tsclassify}
+		</if>
+		
+		<if test="pd.endreason!= null and pd.endreason != ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+		</if>
+		group by a.id
+		order by f.CREATE_TIME_ desc
+	</select>
+	
+	<!-- 待办任务 or正在运行任务列表-->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select
+			f.*,
+			p.NAME_ PNAME_,
+			p.DGRM_RESOURCE_NAME_,
+			a.code,a.tsdate,a.tssource,a.tsman,
+			a.tstel,
+			a.tscont,
+			a.tslevel,
+			a.tsdept,
+			a.tstype,	
+			a.tsclassify,	
+			a.dealman,	
+			a.ishf,
+			a.endtime,
+			a.endreason,
+			a.type,
+			a.cardid,
+			a.cjdate,
+			a.hbh,
+			a.uid,
+			a.clsx,
+			a.kscl,
+			a.czman,
+			a.czdate,
+			a.proc_id,
+			a.id as workid,
+			b.name as tssourcename,
+			c.name as tslevelname,
+			d.name as tstypename,
+			e.name as tsclassifyname,
+			group_concat(j.name) as tsdeptname,
+			g.name as tsbigtype,
+			i.name as cljdname
+		from 
+		<include refid="tableName"></include> f
+		left join
+		<include refid="ptableName"></include> p
+		on f.PROC_DEF_ID_ = p.ID_
+		left join t_workorder a 
+		on f.PROC_INST_ID_ = a.proc_id
+		left join SYS_DICTIONARIES b on a.tssource=b.DICTIONARIES_ID
+		left join T_AREA j on find_in_set (j.area_code,a.tsdept)
+		left join SYS_DICTIONARIES c on a.tslevel=c.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.tstype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES e on a.tsclassify=e.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on d.parent_id=g.DICTIONARIES_ID
+		left join T_AREA i on a.cljd=i.AREA_CODE
+		where 1=1
+		and a.code is not null and a.type!='4'
+		<if test="pd.DWBM2!= null and pd.DWBM2 != ''">
+			and not exists ( select * from act_ru_dept_deal t where a.proc_id=t.proc_id and t.dept=${pd.DWBM2} and isdel='0' and iscl='1')
+		</if>
+		<if test="pd.DWBM1!= null and pd.DWBM1 != ''">
+			and not exists ( select * from act_ru_dept_deal t where a.proc_id=t.proc_id and t.dept=${pd.DWBM1} and isdel='0' and iscl='2')
+		</if>
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					p.NAME_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or 
+					f.NAME_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or 
+					f.ASSIGNEE_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		<if test="pd.lastStart != null and pd.lastStart != ''"><!-- 开始时间检索 -->
+			and f.CREATE_TIME_ &gt;= #{pd.lastStart} 
+		</if>
+		<if test="pd.lastEnd != null and pd.lastEnd != ''"><!-- 结束时间检索 -->
+			and f.CREATE_TIME_ &lt;= #{pd.lastEnd} 
+		</if>
+		
+			<if test="pd.USERNAME != null and pd.USERNAME != '' and (pd.DWBM == '' or pd.DWBM ==null )"><!-- 当前办理人检索 -->
+				and 
+					FIND_IN_SET(#{pd.USERNAME},f.ASSIGNEE_) 
+			</if>
+			<if test="pd.DWBM!= null and pd.DWBM != '' and  (pd.USERNAME == '' or pd.USERNAME==null)">
+				and FIND_IN_SET(${pd.DWBM},f.ASSIGNEE_)
+			</if>
+		
+			<if test="pd.USERNAME != null and pd.USERNAME != '' and  pd.DWBM!= null and pd.DWBM != ''"><!-- 当前办理人检索 -->
+				and 
+					(FIND_IN_SET(#{pd.USERNAME},f.ASSIGNEE_) or FIND_IN_SET(${pd.DWBM},f.ASSIGNEE_))
+			</if>
+			
+		<if test="pd.tssource!= null and pd.tssource != ''">
+			and a.tssource=#{pd.tssource}
+		</if>
+		<if test="pd.starttime!= null and pd.starttime!= ''">
+			and a.tsdate &gt;= #{pd.starttime} 
+		</if>
+		
+		
+		<if test="pd.timelimittype!= null and pd.timelimittype== '24H'">
+			and clsx=#{pd.timelimittype} 
+			and TIMESTAMPDIFF(MINUTE,a.tsdate,now())>#{pd.timelimit}
+		</if>
+		<if test="pd.timelimittype!= null and pd.timelimittype!= '24H'">
+			and clsx=#{pd.timelimittype} 
+			and TIMESTAMPDIFF(MINUTE,f.CREATE_TIME_,now())>#{pd.timelimit}
+		</if>
+		<if test="pd.endtime!= null and pd.endtime!= ''">
+			and a.tsdate &lt;= #{pd.endtime} 
+		</if>
+		<if test="pd.tsman!= null and pd.tsman != ''">
+			and a.tsman LIKE CONCAT(CONCAT('%', #{pd.tsman}),'%')
+		</if>
+		<if test="pd.tsdept!= null and pd.tsdept != ''">
+			and find_in_set(a.tsdept,#{pd.tsdept})
+		</if>
+		
+		<if test="pd.tstype!= null and pd.tstype!= ''">
+			and a.tstype=#{pd.tstype}
+		</if>
+		
+		<if test="pd.bigtstype!= null and pd.bigtstype!= ''">
+			and find_in_set(a.tstype,(select DICTIONARIES_ID from sys_dictionaries where parent_id=#{pd.bigtstype}))
+		</if>
+		
+		<if test="pd.code!= null and pd.code!= ''">
+			and a.code LIKE CONCAT(CONCAT('%', #{pd.code}),'%')
+		</if>
+		<if test="pd.endreason!= null and pd.endreason!= ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+		</if>
+		
+		<if test="pd.type!= null and pd.type== 'all'">
+			and (a.type='0' or a.type='' or a.type is null or a.type='1' or a.type='2' or a.type='3'  or a.type='4' or a.type='5')
+		</if>
+		<if test="pd.type!= null and pd.type!= '' and pd.type!='all'">
+			and a.type=#{pd.type}
+		</if>
+		<if test="pd.tsclassify!= null and pd.tsclassify!= ''">
+			and a.tsclassify=#{pd.tsclassify}
+		</if>
+		
+		<if test="pd.endreason!= null and pd.endreason != ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+		</if>
+		group by a.id
+		order by f.CREATE_TIME_ desc
+	</select>
+	
+	<!-- 已办任务列表-->
+	<select id="hitaskdatalist" parameterType="page" resultType="pd">
+		select
+			f.*,
+			p.NAME_ PNAME_,
+			p.DEPLOYMENT_ID_,
+			p.DGRM_RESOURCE_NAME_,
+			a.code,a.tsdate,a.tssource,a.tsman,
+			a.tstel,
+			a.tscont,
+			a.tslevel,
+			a.tsdept,
+			a.tstype,	
+			a.tsclassify,	
+			a.dealman,	
+			a.ishf,
+			a.endtime,
+			a.endreason,
+			a.type,
+			a.cardid,
+			a.cjdate,
+			a.hbh,
+			a.uid,
+			a.clsx,
+			a.kscl,
+			a.czman,
+			a.czdate,
+			a.proc_id,
+			a.id as workid,
+			b.name as tssourcename,
+			c.name as tslevelname,
+			d.name as tstypename,
+			e.name as tsclassifyname,
+			group_concat(j.name) as tsdeptname,
+			g.name as tsbigtype,
+			i.name as cljdname
+		from
+		(
+			select
+				 n.* 
+			from <include refid="hitasktableName"></include> n 
+			where (
+					
+					FIND_IN_SET(#{pd.USERNAME},n.ASSIGNEE_) 
+					<!-- or
+					n.ASSIGNEE_ in ${pd.RNUMBERS}   -->
+					or
+					FIND_IN_SET(#{pd.DWBM},n.ASSIGNEE_)
+					
+	    		  )
+			group by n.EXECUTION_ID_
+		
+		) f
+		left join
+		<include refid="ptableName"></include> p
+		on f.PROC_DEF_ID_ = p.ID_
+		left join t_workorder a 
+		on f.PROC_INST_ID_ = a.proc_id
+		left join SYS_DICTIONARIES b on a.tssource=b.DICTIONARIES_ID
+		left join T_AREA j on find_in_set (j.area_code,a.tsdept)
+		left join SYS_DICTIONARIES c on a.tslevel=c.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.tstype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES e on a.tsclassify=e.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on d.parent_id=g.DICTIONARIES_ID
+		left join T_AREA i on a.cljd=i.AREA_CODE
+		where 1=1
+		and a.code is not null
+		<if test="pd.keywords!= null and pd.keywords != ''"><!-- 关键词检索 -->
+			and
+				(
+					p.NAME_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or 
+					f.NAME_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+					or 
+					f.ASSIGNEE_ LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+				)
+		</if>
+		<if test="pd.lastStart != null and pd.lastStart != ''"><!-- 开始时间检索 -->
+			and f.END_TIME_ &gt;= #{pd.lastStart} 
+		</if>
+		<if test="pd.lastEnd != null and pd.lastEnd != ''"><!-- 结束时间检索 -->
+			and f.END_TIME_ &lt;= #{pd.lastEnd} 
+		</if>
+		<if test="pd.USERNAME != null and pd.USERNAME != ''"><!-- 办理人检索 -->
+			and 
+				(
+					<!--f.ASSIGNEE_ = #{pd.USERNAME} -->
+					FIND_IN_SET(#{pd.USERNAME},f.ASSIGNEE_) 
+					<!-- or
+					f.ASSIGNEE_ in ${pd.RNUMBERS}   -->
+					  or FIND_IN_SET(#{pd.DWBM},f.ASSIGNEE_) 
+		    	)
+		</if>
+		<if test="pd.tssource!= null and pd.tssource != ''">
+			and a.tssource=#{pd.tssource}
+		</if>
+		<if test="pd.starttime!= null and pd.starttime!= ''">
+			and a.tsdate &gt;= #{pd.starttime} 
+		</if>
+		<if test="pd.endtime!= null and pd.endtime!= ''">
+			and a.tsdate &lt;= #{pd.endtime} 
+		</if>
+		<if test="pd.tsman!= null and pd.tsman != ''">
+			and a.tsman LIKE CONCAT(CONCAT('%', #{pd.tsman}),'%')
+		</if>
+		<if test="pd.tsdept!= null and pd.tsdept != ''">
+			and find_in_set(a.tsdept,#{pd.tsdept})
+		</if>
+		
+		<if test="pd.tstype!= null and pd.tstype!= ''">
+			and a.tstype=#{pd.tstype}
+		</if>
+		
+		<if test="pd.bigtstype!= null and pd.bigtstype!= ''">
+			and find_in_set(a.tstype,(select DICTIONARIES_ID from sys_dictionaries where parent_id=#{pd.bigtstype}))
+		</if>
+		
+		<if test="pd.code!= null and pd.code!= ''">
+			and a.code LIKE CONCAT(CONCAT('%', #{pd.code}),'%')
+		</if>
+		<if test="pd.endreason!= null and pd.endreason!= ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+		</if>
+		
+		<if test="pd.type!= null and pd.type== 'all'">
+			and (a.type='0' or a.type='' or a.type is null or a.type='1' or a.type='2' or a.type='3'  or a.type='4' or a.type='5')
+		</if>
+		<if test="pd.type!= null  and pd.type!= '' and pd.type!='all'">
+			and a.type=#{pd.type}
+		</if>
+		<if test="pd.tsclassify!= null and pd.tsclassify!= ''">
+			and a.tsclassify=#{pd.tsclassify}
+		</if>
+		
+		<if test="pd.endreason!= null and pd.endreason != ''">
+			and a.endreason LIKE CONCAT(CONCAT('%', #{pd.endreason}),'%')
+		</if>
+		and f.END_TIME_ is not NULL
+		group by a.id
+		order by f.END_TIME_ desc
+	</select>
+	
+	<!-- 流程变量列表
+	<select id="varList" parameterType="pd" resultType="pd">
+		select
+			a.*,b.LAST_UPDATED_TIME_
+		from 
+			<include refid="vartableName"></include> a
+			left join ACT_HI_VARINST b on a.ID_=b.ID_
+		where 1=1
+		<if test="PROC_INST_ID_ != null and PROC_INST_ID_ != ''">
+			and a.PROC_INST_ID_ = #{PROC_INST_ID_}
+			and a.TASK_ID_ is NULL
+		</if>
+	</select>
+	 -->
+	 
+	 <select id="varList" parameterType="pd" resultType="pd">
+		select
+			a.*
+		from 
+			ACT_HI_VARINST a
+		where 1=1
+		<if test="PROC_INST_ID_ != null and PROC_INST_ID_ != ''">
+			and a.PROC_INST_ID_ = #{PROC_INST_ID_}
+		</if>
+	</select>
+	<!-- 历史任务节点列表关联历史流程变量表 -->
+	<select id="hiTaskList" parameterType="pd" resultType="pd">
+		select
+			ht.*,
+			hv.TEXT_,
+			hp.DELETE_REASON_
+		from 
+			<include refid="hitinsttableName"></include> ht
+		left join
+			<include refid="hivartableName"></include> hv
+		on ht.TASK_ID_ = hv.TASK_ID_
+		left join
+			<include refid="hpvartableName"></include> hp
+		ON ht.PROC_DEF_ID_ = hp.PROC_DEF_ID_
+		where 1=1
+		<if test="PROC_INST_ID_ != null and PROC_INST_ID_ != ''"><!-- 流程实例ID -->
+			and ht.PROC_INST_ID_ = #{PROC_INST_ID_} 
+			and hp.PROC_INST_ID_ = #{PROC_INST_ID_} 
+		</if>
+		order by ht.ID_
+	</select>
+	
+	<!-- 激活or挂起任务(指定某个任务) -->
+	<update id="onoffTask" parameterType="pd" >
+		update
+		<include refid="tableName"></include>
+		set 
+			SUSPENSION_STATE_ = #{STATUS} 
+		where ID_ = #{ID_}
+	</update>
+	
+	<!-- 激活or挂起任务(指定某个流程的所有任务) -->
+	<update id="onoffAllTask" parameterType="pd" >
+		update
+		<include refid="tableName"></include>
+		set 
+			SUSPENSION_STATE_ = #{STATUS} 
+		where PROC_DEF_ID_ = #{ID_}
+	</update>
+	
+	<select id="getTaskMapByID" parameterType="String" resultType="hashmap">
+	SELECT PROC_INST_ID_,DGRM_RESOURCE_NAME_ from ACT_RU_TASK tk left join ACT_RE_PROCDEF p on tk.PROC_DEF_ID_ = p.ID_ where tk.ID_=#{taskId,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getTaskID" parameterType="String" resultType="String">
+	SELECT ID_ from ACT_RU_TASK where PROC_INST_ID_=#{INSTID,jdbcType=VARCHAR}
+	</select>
+	
+	
+	<!-- 历史任务节点列表关联历史流程变量表 -->
+	<select id="getDealByDept" parameterType="pd" resultType="pd">
+		select
+			*
+		from 
+			act_ru_dept_deal
+		where 1=1
+		<if test="isdel != null and isdel != ''">
+			and isdel=#{isdel} 
+		</if>
+		<if test="dept != null and dept != ''"><!-- 流程实例ID -->
+			and dept = #{dept} 
+		</if>
+		<if test="iscl != null and iscl != ''"><!-- 流程实例ID -->
+			and iscl = #{iscl} 
+		</if>
+		<if test="proc_id != null and proc_id != ''"><!-- 流程实例ID -->
+			and proc_id = #{proc_id} 
+		</if>
+	</select>
+	<!-- 历史任务节点列表关联历史流程变量表 -->
+	<select id="getDealByDeptList" parameterType="pd" resultType="pd">
+		select
+			*
+		from 
+			act_ru_dept_deal
+		where 1=1
+		<if test="isdel != null and isdel != ''">
+			and isdel=#{isdel} 
+		</if>
+		<if test="dept != null and dept != ''"><!-- 流程实例ID -->
+			and dept = #{dept} 
+		</if>
+		<if test="iscl != null and iscl != ''"><!-- 流程实例ID -->
+			and iscl = #{iscl} 
+		</if>
+		<if test="proc_id != null and proc_id != ''"><!-- 流程实例ID -->
+			and proc_id = #{proc_id} 
+		</if>
+		<if test="dwdept != null and dwdept != ''"><!-- 流程实例ID -->
+			and dept != #{dwdept} 
+		</if>
+	</select>
+	
+	<delete id="delDealDept" parameterType="String">
+		update  act_ru_dept_deal set isdel='1'
+		where 1=1
+		<if test="dept != null and dept != ''"><!-- 流程实例ID -->
+			and dept = #{dept} 
+		</if>
+		<if test="iscl != null and iscl != ''"><!-- 流程实例ID -->
+			and iscl = #{iscl} 
+		</if>
+		<if test="proc_id != null and proc_id != ''"><!-- 流程实例ID -->
+			and proc_id = #{proc_id} 
+		</if>
+	</delete>
+	
+	<insert id="saveDealDept" parameterType="pd">
+		insert into 
+		act_ru_dept_deal(
+			proc_id,
+			dept,
+			czman,
+			czdate,
+			iscl,
+			remark
+		) values (
+			#{proc_id},
+			#{dept},
+			#{czman},
+			now(),
+			#{iscl},
+			#{remark}
+		)
+	</insert>
+	
+	
+	<!-- 预警信息 -->
+	<select id="getYj" parameterType="pd" resultType="pd">
+		select
+			*
+		from 
+			t_act_timelimit
+		where 1=1
+		<if test="key_value != null and key_value != ''"><!-- 流程审批名称 -->
+			and key_value = #{key_value} 
+		</if>
+		<if test="process != null and process != ''"><!-- 当前流程 -->
+			and process = #{process} 
+		</if>
+		<if test="timelimittype != null and timelimittype != ''"><!-- 时间类型 -->
+			and timelimittype = #{timelimittype} 
+		</if>
+	</select>
+	
+</mapper>

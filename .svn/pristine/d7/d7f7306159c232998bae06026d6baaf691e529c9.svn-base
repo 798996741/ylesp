@@ -1,0 +1,159 @@
+package com.yulun.controller.file;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.controller.base.BaseController;
+import com.fh.util.Const;
+import com.fh.util.PageData;
+import com.fh.util.PathUtil;
+import com.yulun.service.OuterCallTaskManager;
+import com.yulun.utils.PoiExcelUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * @description:
+ * @author: 19bicheng@gmail.com
+ * @time: 2020/7/24 13:58
+ */
+@Controller
+@RequestMapping("api")
+public class FileVoiceUpload extends BaseController {
+    @Autowired
+    OuterCallTaskManager outerCallTaskManager;
+    /**
+     * 上传录音文件
+     *
+     * @param file
+     * @param request
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/upload/call/voice")
+    @ResponseBody()
+    public String readcompanyExcel(@RequestParam(value = "file", required = true) MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        JSONObject obj = new JSONObject();
+        try {
+            String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+            String fileName = com.fh.util.FileUpload.fileUp(file, filePath, UUID.randomUUID().toString().replaceAll("-", "").toLowerCase());                            //执行上传
+            obj.put("succsess", true);
+            obj.put("path", fileName);
+        } catch (Exception e) {
+            obj.put("succsess", false);
+            obj.put("path", "上传失败");
+        }
+        return obj.toJSONString();
+    }
+
+    @RequestMapping("download/taskDetailPage/excel")
+    public void downLoadDepartmentDistributedDistributed(HttpServletResponse response,Integer id,String lxr,String lxtel,Integer callSatus, Integer hasIntention, String companyName, String ids) {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        PageData pd=new PageData();
+        pd.put("ids",ids);
+        pd.put("id",ids);
+        pd.put("lxr",lxr);
+        pd.put("lxtel",lxtel);
+        pd.put("callSatus",callSatus);
+        pd.put("hasIntention",hasIntention);
+        pd.put("companyName",companyName);
+        List<List<String>> headList = new ArrayList<>();
+
+        List<String> head0 = new ArrayList<String>();
+        head0.add("任务id");
+        List<String> head1 = new ArrayList<String>();
+        head1.add("任务类型");
+        List<String> head2 = new ArrayList<String>();
+        head2.add("任务名称");
+        List<String> head3 = new ArrayList<String>();
+        head3.add("所属地区");
+        List<String> head4 = new ArrayList<String>();
+        head4.add("姓名");
+        List<String> head5 = new ArrayList<String>();
+        head5.add("年龄");
+        List<String> head6 = new ArrayList<String>();
+        head6.add("性别");
+        List<String> head7 = new ArrayList<String>();
+        head7.add("联系电话");
+        List<String> head8 = new ArrayList<String>();
+        head8.add("客户类型");
+        List<String> head9 = new ArrayList<String>();
+        head9.add("身份证号");
+        List<String> head10 = new ArrayList<String>();
+        head10.add("企业名称");
+        List<String> head11 = new ArrayList<String>();
+        head11.add("通话时间");
+        List<String> head12 = new ArrayList<String>();
+        head12.add("通话时长");
+        List<String> head13 = new ArrayList<String>();
+        head13.add("通话次数");
+        List<String> head14 = new ArrayList<String>();
+        head14.add("任务结果");
+        headList.add(head0);
+        headList.add(head1);
+        headList.add(head2);
+        headList.add(head3);
+        headList.add(head4);
+        headList.add(head5);
+        headList.add(head6);
+        headList.add(head7);
+        headList.add(head8);
+        headList.add(head9);
+        headList.add(head10);
+        headList.add(head11);
+        headList.add(head12);
+        headList.add(head13);
+        headList.add(head14);
+        try {
+            List<PageData> list = outerCallTaskManager.taskDetailAll(pd);
+            List<List<String>> dataList = new ArrayList<>();
+            for (PageData pageData:list){
+                List<String> data = new ArrayList<String>();
+                data.add(pageData.getString("taskid"));
+                data.add(pageData.getString("cateName"));
+                data.add(pageData.getString("taskName"));
+                data.add(pageData.getString("jg"));
+                data.add(pageData.getString("lxr"));
+                data.add(pageData.get("age")==null?"-":(int)pageData.get("age")+"");
+                data.add(pageData.get("sex")==null?"-":(pageData.get("sex").toString().equals("1")?"男":"女"));
+                data.add(pageData.getString("lxtel"));
+                data.add(pageData.getString("cate"));
+                data.add(pageData.getString("cardid"));
+                data.add(pageData.getString("companyName"));
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                data.add(pageData.get("callTime")==null?"-":formatter.format((Date)pageData.get("callTime")));
+                data.add(pageData.get("bdsc")==null?"-":pageData.get("bdsc").toString());
+                data.add(pageData.get("callNum")==null?"-":pageData.get("callNum").toString());
+                String hasIntentionExcel="";
+                Object hasIntention1=pageData.get("hasIntention");
+                if(hasIntention1==null){
+                    hasIntentionExcel="-";
+                }else{
+                    if("0".equals(hasIntention1.toString())){
+                        hasIntentionExcel="未知意向";
+                    }else if("1".equals(hasIntention1.toString())){
+                        hasIntentionExcel="有意向";
+                    }else if("2".equals(hasIntention1.toString())){
+                        hasIntentionExcel="没有意向";
+                    }
+                }
+                data.add(hasIntentionExcel);
+                dataList.add(data);
+            }
+            PoiExcelUtil.dynamicHeadWebWrite(response, "通话详情", headList, dataList);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+}

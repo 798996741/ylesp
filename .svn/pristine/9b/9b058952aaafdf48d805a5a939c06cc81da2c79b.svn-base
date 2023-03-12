@@ -1,0 +1,133 @@
+package com.yulun.controller.serverLog;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.CompanyManager;
+import com.yulun.service.PersonManager;
+import com.yulun.service.PolicyManager;
+import com.yulun.utils.TimeHandle;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-07 10:06
+ **/
+public class PolicyWeb implements CommonIntefate {
+    String SUCCESS = "success";
+    String MSG = "msg";
+    String FALSE = "false";
+    String TRUE = "true";
+    Integer pageIndex;
+    Integer pageSize;
+    @Resource(name="zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Resource(name="policyService")
+    private PolicyManager policyService;
+
+    @Resource(name = "personService")
+    private PersonManager personService;
+
+    @Resource(name="companyService")
+    private CompanyManager companyService;
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object=new JSONObject();
+        PageData pd = new PageData();
+        String cmd = data.getString("cmd")==null?"":data.getString("cmd");
+        PageData pd_stoken=new PageData();
+        JSONObject json = data.getJSONObject("data");
+        pd_stoken.put("TOKENID", json.get("tokenid"));
+//        try {
+        Page page = new Page();
+        pageIndex = json.getInteger("pageIndex");
+        if(pageIndex != null){
+        page.setCurrentPage(pageIndex);}
+        pageSize = json.getInteger("pageSize");
+      if (pageSize != null) {
+        page.setShowCount(pageSize);
+        }
+        PageData pd_token=zxlbService.findByTokenId(pd_stoken);
+       if (null == pd_token){
+           object.put(SUCCESS,"false");
+           object.put(MSG,"请重新登陆");
+            return object;
+        }
+
+        if("policyList".equals(cmd)){
+            String endTime = json.getString("endTime");
+            if(null != endTime && !"".equals(endTime)) {
+                endTime = TimeHandle.endTimeHeandle(endTime);
+                json.put("endTime", endTime);
+            }
+            pd.putAll(json);
+            page.setPd(pd);
+            List<PageData> list = policyService.findAlllistPage(page);
+            if(list.size() > 0){
+                object.put(SUCCESS,TRUE);
+                object.put("data",list);
+                object.put("pageId",pageIndex);
+                object.put("pageCount",page.getTotalPage());
+                object.put("recordCount",page.getTotalResult());
+            }else{
+                object.put("success","false");
+                object.put("msg","暂无数据");
+            }
+        }
+
+            // 查看详情信息
+            if("policyCustomer".equals(cmd)){
+                pd.putAll(json);
+                page.setCurrentPage(1);
+                page.setShowCount(5);
+                String type = pd.getString("type");
+                String uid = pd.getString("uid");
+                if(uid == null || "".equals(uid)){
+                    object.put("success", "false");
+                    object.put("msg", "入参错误");
+                    return object;
+                }
+                PageData customer = companyService.findByUid(pd);
+                if(customer == null)
+                    customer = personService.findByUid(pd);
+
+                if(customer == null){
+                    object.put(SUCCESS, FALSE);
+                    object.put(MSG, "暂无此人");
+                }else{  object.put("data",customer);
+                }
+            }
+
+            if("detail".equals(cmd)){
+                pd.putAll(json);
+                page.setPd(pd);
+                List<PageData> list = policyService.findByUidlistPage(page);
+                if(list.size() > 0){
+                    object.put(SUCCESS,TRUE);
+                    object.put("data",list);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                }else{
+                    object.put("success","true");
+                    object.put("msg","暂无数据");
+                }
+            }
+
+
+
+//        }catch(Exception e){
+//            object.put("success", "false");
+//            object.put("msg", "数据异常");
+//        }finally {
+//            return object;
+//        }
+        return object;
+    }
+}

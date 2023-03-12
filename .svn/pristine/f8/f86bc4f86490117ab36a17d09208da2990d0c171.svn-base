@@ -1,0 +1,107 @@
+package com.yulun.service.impl;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.yulun.service.DataAnalyzeManager;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.List;
+@Service("dataAnalyzeService")
+public class DataAnalyzeService implements DataAnalyzeManager {
+    @Resource(name = "daoSupport")
+    private DaoSupport dao;
+
+    @Override
+    public List<PageData> TrafficTitle(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.TrafficTitle", pd);
+    }
+
+    @Override
+    public List<PageData> TrafficlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.TrafficlistPage", pd);
+    }
+
+    @Override
+    public List<PageData> RevrecordTitle(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.Revrecordtitle", pd);
+    }
+
+    @Override
+    public List<PageData> RevrecordlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.RevrecordlistPage", pd);
+    }
+
+    @Override
+    public List<PageData> xlrecruitlist(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.xlrecruitlist", pd);
+    }
+
+    @Override
+    public List<PageData> sexrecruitlist(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.sexrecruitlist", pd);
+    }
+
+    @Override
+    public PageData agerecruitlist(PageData pd) throws Exception {
+        return (PageData)dao.findForObject("DataAnalyzeMapper.agerecruitlist", pd);
+    }
+
+    @Override
+    public PageData totalrecruit(PageData pd) throws Exception {
+        return (PageData)dao.findForObject("DataAnalyzeMapper.totalrecruit", pd);
+    }
+
+    @Override
+    public PageData MonthCompanyLine(PageData pd) throws Exception {
+        return (PageData)dao.findForObject("DataAnalyzeMapper.MonthCompanyLine", pd);
+    }
+
+    @Override
+    public PageData MonthPersonLine(PageData pd) throws Exception {
+        return (PageData)dao.findForObject("DataAnalyzeMapper.MonthPersonLine", pd);
+    }
+
+    @Override
+    public List<PageData> TracklistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.TracklistPage", pd);
+    }
+
+    @Override
+    public List<PageData> DataTrack(PageData pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.DataTrack", pd);
+    }
+
+    @Override
+    public List<PageData> PersonServerlistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.PersonServerlistPage", pd);
+    }
+
+    @Override
+    public List<PageData> LocallistPage(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.LocallistPage", pd);
+    }
+
+    @Override
+    public void insertholiday(PageData pd) throws Exception {
+        dao.save("DataAnalyzeMapper.insertholiday", pd);
+    }
+
+    @Override
+    public void updateholiday(PageData pd) throws Exception {
+        dao.update("DataAnalyzeMapper.updateholiday", pd);
+    }
+
+    @Override
+    public void deleteholiday(PageData pd) throws Exception {
+        dao.delete("DataAnalyzeMapper.deleteholiday", pd);
+    }
+
+    @Override
+    public List<PageData> findholiday(Page pd) throws Exception {
+        return (List<PageData>)dao.findForList("DataAnalyzeMapper.findholiday", pd);
+    }
+
+
+}

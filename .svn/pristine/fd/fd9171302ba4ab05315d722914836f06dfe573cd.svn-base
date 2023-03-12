@@ -1,0 +1,83 @@
+package com.yulun.controller.OtherPerson;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.controller.api.CommonIntefate;
+import com.yulun.service.OtherPersonManager;
+import com.yulun.service.TrainInfoManager;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-08 16:12
+ **/
+public class OtherPersonWeb implements CommonIntefate {
+    String SUCCESS = "success";
+    String MSG = "msg";
+    String FALSE = "false";
+    String TURE = "true";
+    Integer pageIndex;
+    Integer pageSize;
+
+    @Resource(name="zxlbService")
+    private ZxlbManager zxlbService;
+
+    @Resource(name="otherPersonService")
+    private OtherPersonManager otherPersonService;
+    @Override
+    public JSONObject execute(JSONObject data, HttpServletRequest request) throws Exception {
+        JSONObject object = new JSONObject();
+        PageData pd = new PageData();
+        String cmd = data.getString("cmd") == null ? "" : data.getString("cmd");
+        PageData pd_stoken = new PageData();
+        JSONObject json = data.getJSONObject("data");
+        pd_stoken.put("TOKENID", json.get("tokenid"));
+        try {
+            PageData pd_token = zxlbService.findByTokenId(pd_stoken);
+            if (null == pd_token) {
+                json.put(SUCCESS, "false");
+                json.put(MSG, "请重新登陆");
+            }
+            //查询方法
+            if("otherPersonList".equals(cmd)){
+                Page page = new Page();
+                pageIndex = json.getInteger("pageIndex");
+                page.setCurrentPage(pageIndex);
+                pageSize = json.getInteger("pageSize");
+                page.setShowCount(pageSize);
+//            查询条件
+                page.setPd(pd);
+                List<PageData> list = otherPersonService.findAlllistPage(page);
+                if(list.size() > 0){
+                    object.put(SUCCESS,TURE);
+                    object.put("data",list);
+                    object.put("pageId",pageIndex);
+                    object.put("pageCount",page.getTotalPage());
+                    object.put("recordCount",page.getTotalResult());
+                }else{
+                    object.put(SUCCESS,"false");
+                    object.put(MSG,"暂无数据");
+                }
+            }
+
+            if("findByIdUid".equals(cmd)) {
+                pd.putAll(json);
+                List<PageData> otherPerson = otherPersonService.findByIdUid(pd);
+                object.put("data",otherPerson);
+            }
+
+
+        }catch(Exception e){
+            object.put("success", "false");
+            object.put("msg", "数据异常");
+
+        }finally{
+            return object;
+        }
+    }
+}

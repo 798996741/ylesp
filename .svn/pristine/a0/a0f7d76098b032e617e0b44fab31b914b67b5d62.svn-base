@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EmployregMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		tesp_employreg
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		uid,
+		jobname,
+		jobtype,
+		xl,
+		zyyq,
+		remark,
+		czman,
+		czdate,
+		zgrs,
+		sex,
+		agestart,
+		ageend,
+		gzdy,
+		gwyq,
+		xlyq	
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{uid},
+		#{jobname},
+		#{jobtype},
+		#{xl},
+		#{zyyq},
+		#{remark},
+		#{czman},
+		now(),
+		#{zgrs},
+		#{sex},
+		#{agestart},
+		#{ageend},
+		#{gzdy},
+		#{gwyq},
+		#{xlyq}
+	</sql>
+	
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	
+	<!-- 批量删除 -->
+	<update id="deleteAll" parameterType="String">
+		delete from 
+			<include refid="tableName"></include>
+		where 
+			find_in_set(uid,#{uid})
+	</update>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+			jobname=#{jobname},
+			jobtype=#{jobtype},
+			xl=#{xl},
+			zyyq=#{zyyq},
+			remark=#{remark},
+			czman=#{czman},
+			czdate=now(),
+			zgrs=#{zgrs},
+			sex=#{sex},
+			agestart=#{agestart},
+			ageend=#{ageend},
+			gzdy=#{gzdy},
+			gwyq=#{gwyq},
+			xlyq=#{xlyq}
+		where 
+		id = #{id}
+	</update>
+	
+	
+	<!-- 修改 -->
+	<update id="editValid" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+			isvalid=#{isvalid}
+		where 
+		id = #{id}
+	</update>
+	
+	
+	
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.jobname,
+			a.jobtype,
+			a.xl,
+			a.zyyq,
+			a.remark,
+			a.czman,
+			a.zgrs,
+			a.sex,
+			a.agestart,
+			a.ageend,
+			a.gzdy,
+			a.gwyq,
+			a.xlyq,
+			a.isvalid,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as xlyqname,
+			f.name as xlname,
+			c.zxxm as czname,
+			d.name as jobtypename,
+			g.name as gzdyname,
+			e.gwflname 
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.xlyq=b.DICTIONARIES_ID
+		left join SYS_DICTIONARIES f on a.xl=f.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on a.gzdy=g.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join tesp_jobtype e on a.jobname=e.code
+		where 1=1
+		
+		
+		<if test="pd.starttime!=null and pd.starttime!=''"><!-- 开始时间检索 -->
+			and a.czdate &gt;= #{pd.starttime} 
+		</if>
+		<if test="pd.endtime!=null and pd.endtime!=''"><!-- 结束时间检索 -->
+			and a.czdate &lt;= #{pd.endtime} 
+		</if>
+		and a.uid =#{pd.uid}
+	
+		order by a.czdate desc	
+	</select>
+	
+	
+	<!-- 列表
+	<select id="listAllByuid" parameterType="page" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.jobname,
+			a.jobtype,
+			a.xl,
+			a.zyyq,
+			a.remark,
+			a.czman,
+			a.zgrs,
+			a.sex,
+			a.age,
+			a.gzdy,
+			a.gwyq,
+			a.xlyq,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as xlyqname,
+			g.name as xlname,
+			c.zxxm as czname,
+			d.name as jobtypename,
+			k.name as gzdyname,
+			e.gwflname 
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.xlyq=b.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on a.xl=g.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join tesp_jobtype e on a.jobname=e.code
+		left join tesp_company f on a.uid=f.uid
+		left join SYS_DICTIONARIES k on a.gzdy=k.DICTIONARIES_ID
+		
+		where a.uid =#{pd.uid}
+		order by a.czdate desc	
+	</select>
+	 -->
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByid" parameterType="pd" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.jobname,
+			a.jobtype,
+			a.xl,
+			a.zyyq,
+			a.remark,
+			a.czman,
+			a.zgrs,
+			a.sex,
+			a.agestart,
+			a.ageend,
+			a.gzdy,
+			a.gwyq,
+			a.xlyq,
+			a.isvalid,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			b.name as xlyqname,
+			g.name as xlname,
+			c.zxxm as czname,
+			d.name as jobtypename,
+			k.name as gzdyname,
+			e.gwflname 
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES b on a.xlyq=b.DICTIONARIES_ID
+		left join SYS_DICTIONARIES g on a.xl=g.DICTIONARIES_ID
+		left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join tesp_jobtype e on a.jobname=e.code
+		left join SYS_DICTIONARIES k on a.gzdy=k.DICTIONARIES_ID
+		
+		where 1=1
+		
+			and a.id = #{id}
+	</select>
+	
+	
+	<!-- 351412933 -->
+</mapper>

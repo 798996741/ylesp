@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WorkTaskMapper">
+
+    <select id="findAlllistPage" resultType="pd" parameterType="page">
+		SELECT * FROM t_worktask WHERE 1=1
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and teltime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		<if test="pd.telnum != null and pd.telnum != ''">
+			and telnum=#{pd.telnum}
+		</if>
+		<if test="pd.class != null and pd.class != ''">
+			and class=#{pd.class}
+		</if>
+		<if test="pd.userid != null and pd.userid != ''">
+			and userid=#{pd.userid}
+		</if>
+		<if test="pd.type != null and pd.type != ''">
+			and type=#{pd.type}
+		</if>
+		order by id desc
+	</select>
+
+	<select id="findWorkTaskByid" parameterType="pd" resultType="pd">
+		SELECT * FROM T_WORKTASK WHERE id=#{id}
+	</select>
+
+    <insert id="insertWorkTask" parameterType="pd">
+		INSERT INTO T_WORKTASK(
+		telnum,
+		teltime,
+		message,
+		type,
+		result,
+		class,
+		userid
+		)VALUES (
+		#{telnum},
+		#{teltime},
+		#{message},
+		#{type},
+		#{result},
+		#{class},
+		#{userid}
+		)
+	</insert>
+
+	<update id="updateWorkTask" parameterType="pd">
+		UPDATE T_WORKTASK
+		SET
+		telnum=#{telnum},
+		teltime=#{teltime},
+		message=#{message},
+		type=#{type},
+		result=#{result},
+		class=#{class},
+		userid=#{userid}
+		WHERE id=#{id}
+	</update>
+
+    <delete id="deleteWorkTask" parameterType="pd">
+		DELETE FROM T_WORKTASK WHERE id=#{id}
+	</delete>
+</mapper>

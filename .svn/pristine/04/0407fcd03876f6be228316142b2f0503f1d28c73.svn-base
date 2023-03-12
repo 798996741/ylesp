@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="JobregMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		tesp_jobreg
+	</sql>
+	
+	<!-- 字段 -->
+	<sql id="Field">
+		uid,
+		jobname,
+		jobtype,
+		qwxz,
+		jobaddr,
+		remark,
+		czman,
+		czdate,
+		specificjobname,
+		experience
+
+	</sql>
+	
+	<!-- 字段值 -->
+	<sql id="FieldValue">
+		#{uid},
+		#{jobname},
+		#{jobtype},
+		#{qwxz},
+		#{jobaddr},
+		#{remark},
+		#{czman},
+		now()
+		#{specificjobname},
+		#{experience}
+	</sql>
+	
+	
+	<!-- 新增-->
+	<insert id="save" parameterType="pd">
+		insert into 
+	<include refid="tableName"></include>
+		(
+	<include refid="Field"></include>
+		) values (
+	<include refid="FieldValue"></include>
+		)
+	</insert>
+	
+	
+	<!-- 批量删除 -->
+	<update id="deleteAll" parameterType="String">
+		delete from 
+			<include refid="tableName"></include>
+		where 
+			find_in_set(id,#{id})
+	</update>
+	
+	<!-- 修改 -->
+	<update id="edit" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+			jobname=#{jobname},
+			jobtype=#{jobtype},
+			qwxz=#{qwxz},
+			jobaddr=#{jobaddr},
+			remark=#{remark},
+			czman=#{czman},
+			specificjobname=#{specificjobname},
+			experience=#{experience},
+			czdate=now()
+		where 
+		id = #{id}
+	</update>
+	
+	
+	<!-- 修改 -->
+	<update id="editValid" parameterType="pd">
+		update
+			<include refid="tableName"></include>
+		set 
+			isvalid=#{isvalid}
+		where 
+		id = #{id}
+	</update>
+	
+	
+	
+	
+	<!-- 列表 -->
+	<select id="datalistPage" parameterType="page" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.jobname,
+			a.jobtype,
+			a.qwxz,
+			a.jobaddr,
+			a.remark,
+			a.czman,
+			a.specificjobname,
+			a.experience,
+			a.isvalid,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			c.zxxm as czname,
+			d.name as jobtypename,
+			f.name as qyxzname,
+			e.gwflname 
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES f on a.qwxz=f.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join tesp_jobtype e on a.jobname=e.code
+		where 1=1
+		
+		
+		<if test="pd.starttime!=null and pd.starttime!=''"><!-- 开始时间检索 -->
+			and a.czdate &gt;= #{pd.starttime} 
+		</if>
+		<if test="pd.endtime!=null and pd.endtime!=''"><!-- 结束时间检索 -->
+			and a.czdate &lt;= #{pd.endtime} 
+		</if>
+		and a.uid =#{pd.uid}
+		order by a.czdate desc	
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findByid" parameterType="pd" resultType="pd">
+		select 
+			a.id,
+			a.uid,
+			a.jobname,
+			a.jobtype,
+			a.qwxz,
+			a.jobaddr,
+			a.remark,
+			a.czman,
+			a.specificjobname,
+			a.experience,
+			a.isvalid,
+			DATE_FORMAT(a.czdate,"%Y-%m-%d %T") as czdate,
+			c.zxxm as czname,
+			d.name as jobtypename,
+			f.name as qyxzname,
+			e.gwflname 
+		 from 
+		<include refid="tableName"></include> a 
+		left join SYS_DICTIONARIES d on a.jobtype=d.DICTIONARIES_ID
+		left join SYS_DICTIONARIES f on a.qwxz=f.DICTIONARIES_ID
+		left join tzxlb c on a.czman=c.zxyh
+		left join tesp_jobtype e on a.jobname=e.code
+		where 1=1
+		
+			and a.id = #{id}
+	</select>
+	
+	
+	<!-- 351412933 -->
+</mapper>

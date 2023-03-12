@@ -1,0 +1,24 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="outerCallTaskService">
+    <select id="findAllDictionariesPage" resultType="pd" parameterType="pd">
+        SELECT b.DICTIONARIES_ID, b.NAME
+        from sys_dictionaries a
+                 join sys_dictionaries b on a.DICTIONARIES_ID = b.PARENT_ID
+        where a.BIANMA = #{bianma}
+    </select>
+    <select id="listPage" resultType="pd" parameterType="page">
+        SELECT id,
+               taskid,
+               startTime,
+               endTime,
+               status,
+               createTime,
+               updateTime,
+               calledNum,
+               (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = cate) as cateName,
+               (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = name) as taskName,
+               (SELECT zxxm from tzxlb where a.id = createUseId) as createUseName
+        from outer_call_task a
+    </select>
+
+</mapper>

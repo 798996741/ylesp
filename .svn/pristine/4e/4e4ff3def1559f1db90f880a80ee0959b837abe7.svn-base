@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="serviceCountMapper">
+    <select id="serviceCount" parameterType="pd" resultType="pd">
+        SELECT  SUM(result.value) AS serviceCount FROM(
+        SELECT COUNT(*) AS `value` FROM tesp_qtfw WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        UNION
+        SELECT COUNT(*) AS `value`  FROM tesp_zczx WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        UNION
+        SELECT COUNT(*) AS `value`  FROM tesp_ywyd WHERE czdate >  1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        UNION
+        SELECT COUNT(*) AS `value`  FROM tesp_trainreco WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        ) AS result
+    </select>
+</mapper>
+
+
+

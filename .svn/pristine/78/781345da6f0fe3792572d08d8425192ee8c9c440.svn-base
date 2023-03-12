@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="emPersonMapper">
+
+
+<select id="findAlllistPage"  resultType="pd"  parameterType="page">
+    SELECT * FROM(
+    SELECT
+    p.uid,
+    (SELECT jt.gwflname FROM tesp_jobtype jt WHERE jt.`code`=  j.jobname) AS jobname,
+    DATE_FORMAT(
+    (
+    SELECT
+    r.czdate
+    FROM
+    tesp_jobreg r
+    WHERE
+    p.uid = r.uid
+    AND isvalid = 1
+    ORDER BY
+    r.czdate ASC
+    LIMIT
+    1
+    ), "%Y-%m-%d %T"
+    ) AS qzdate,
+    p.name,
+    p.sex,
+    p.tel,
+    p.lxtel,
+    p.xl,
+    (
+    SELECT
+    `name`
+    FROM
+    sys_dictionaries
+    WHERE
+    dictionaries_id = p.xl
+    ) AS xlname,
+    j.jobtype,
+    (
+    SELECT
+    `name`
+    FROM
+    sys_dictionaries
+    WHERE
+    dictionaries_id = j.jobtype
+    ) AS jobtypename,
+    (
+    SELECT
+    COUNT(*)
+    FROM
+    tesp_tj tj
+    WHERE
+    tj.uid = j.uid
+    ) AS tjcount,
+    jobunit,
+    (
+    SELECT
+    result
+    FROM
+    tesp_revrecord rev
+    WHERE
+    p.uid = rev.uid
+    ORDER BY
+    cztime
+    LIMIT
+    1
+    ) AS result,
+    DATE_FORMAT(j.cztime, "%Y-%m-%d %T") AS cztime,
+    p.isjob
+    FROM
+    tesp_jobreturn j
+    INNER JOIN tesp_person p ON j.uid = p.uid
+    WHERE
+    1 = 1
+    <if test="pd.startTime!=null and pd.startTime!=''">
+        and  cztime &gt; #{pd.startTime}
+    </if>
+    <if test="pd.endTime!=null and pd.endTime!=''">
+        and cztime &lt;  #{pd.endTime}
+    </if>
+    <if test="pd.name!=null and pd.name!=''">
+        and name like CONCAT('%',#{pd.name},'%')
+    </if>
+    <if test="pd.isjob!=null and pd.isjob!=''">
+        and isjob =  #{pd.isjob}
+    </if>
+    ORDER BY cztime DESC ) AS result GROUP BY uid order by qzdate desc
+</select>
+<select id="findEmCaseByUidlistPage" resultType="pd"  parameterType="page">
+    SELECT j.uid, DATE_FORMAT(jobtime,"%Y-%m-%d %T") AS jobtime,j.jobunit,
+    (SELECT jt.gwflname FROM tesp_jobtype jt WHERE jt.`id`=  j.jobname) AS jobname,j.case,j.czman,
+    DATE_FORMAT(cztime,"%Y-%m-%d %T") AS cztime FROM tesp_jobreturn j WHERE 1=1
+<if test="pd.uid != null and pd.uid != ''">
+    and uid = #{pd.uid}
+</if>
+order by cztime desc
+</select>
+</mapper>

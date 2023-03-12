@@ -1,0 +1,35 @@
+package com.yulun.service;
+
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+
+import java.util.List;
+
+public interface TrainrecoManager {
+    public void insertTrainreco(PageData pd)throws Exception;
+    public void updateTrainreco(PageData pd)throws Exception;
+    public void deleteTrainrecoById(PageData pd)throws Exception;
+    public List<PageData> findTrainrecolistPage(Page page)throws Exception;
+    public List<PageData> finddetiallistPage(Page page)throws Exception;
+    public PageData findjzbtry(PageData pd)throws Exception;
+    public PageData findpoverty(PageData pd)throws Exception;
+    public PageData findsbbtry(PageData pd)throws Exception;
+    public PageData findgraduate(PageData pd)throws Exception;
+    public PageData findotherperson(PageData pd)throws Exception;
+    public PageData findperson(PageData pd)throws Exception;
+    public PageData findcompany(PageData pd)throws Exception;
+    public PageData jobcaselist(PageData pd)throws Exception;
+
+    public List<PageData> misscalllistPage(Page page)throws Exception;
+    public List<PageData> leavemsglistPage(Page page)throws Exception;
+    public List<PageData> JobReturnlistPage(Page page)throws Exception;
+    public List<PageData> SignupCompanylistPage(Page page)throws Exception;
+    public List<PageData> SignupPersonlistPage(Page page)throws Exception;
+    public void insertjobreturn(PageData pd)throws Exception;
+    public void updatejobreturn(PageData pd)throws Exception;
+    public PageData getsignnum(PageData pd)throws Exception;
+    public List<PageData> exportsign(PageData pd)throws Exception;
+    public void insertsignup(PageData pd)throws Exception;
+    public void updateisjobAll(PageData pd)throws Exception;
+
+}

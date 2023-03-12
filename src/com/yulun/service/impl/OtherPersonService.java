@@ -1,0 +1,61 @@
+package com.yulun.service.impl;
+
+import com.fh.dao.DaoSupport;
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+import com.yulun.service.OtherPersonManager;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.List;
+
+/**
+ * @Author Aliar
+ * @Time 2020-05-08 16:13
+ **/
+
+@Service("otherPersonService")
+public class OtherPersonService implements OtherPersonManager {
+    @Resource(name = "daoSupport")
+    private DaoSupport dao;
+
+    @Override
+    public List<PageData> findAlllistPage(Page page) throws Exception {
+        return (List<PageData>) dao.findForList("otherPersonMapper.findAlllistPage",page);
+    }
+
+    @Override
+    public List<PageData> findByIdUid(PageData pd) throws Exception {
+        return (List<PageData>) dao.findForList("otherPersonMapper.findByIdUid",pd);
+    }
+
+    @Override
+    public List<PageData> findXl(PageData pd) throws Exception {
+        return (List<PageData>) dao.findForList("otherPersonMapper.findXl",pd);
+    }
+
+    @Override
+    public List<PageData> findExist(Page page) throws Exception {
+        return  (List<PageData>) dao.findForList("otherPersonMapper.findExist",page);
+    }
+
+    @Override
+    public List<PageData> findById(PageData pageData) throws Exception {
+        return (List<PageData>) dao.findForList("otherPersonMapper.findbyId",pageData);
+    }
+
+    @Override
+    public Object save(PageData pd) throws Exception {
+        return dao.save("otherPersonMapper.save", pd);
+    }
+
+    @Override
+    public Object update(PageData pd) throws Exception {
+        return dao.update("otherPersonMapper.update",pd);
+    }
+
+    @Override
+    public Object save(List<PageData> pd) throws Exception {
+        return dao.batchSave("otherPersonMapper.batchSave",pd);
+    }
+}

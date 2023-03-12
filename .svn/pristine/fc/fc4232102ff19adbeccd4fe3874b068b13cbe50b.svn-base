@@ -1,0 +1,326 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="outerCallTaskService">
+    <select id="findAllDictionariesPage" resultType="pd" parameterType="pd">
+        SELECT b.DICTIONARIES_ID, b.NAME
+        from sys_dictionaries a
+                 join sys_dictionaries b on a.DICTIONARIES_ID = b.PARENT_ID
+        where a.BIANMA = #{bianma}
+    </select>
+    <select id="listPage" resultType="pd" parameterType="page">
+        SELECT id,
+        taskid,
+        startTime,
+        endTime,
+        status,
+        createTime,
+        updateTime,
+        calledNum,
+        (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = a.cate) as cateName,
+        (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = a.name) as taskName,
+        (SELECT zxxm from tzxlb where tzxlb.id = a.createUserId) as createUseName,
+        (SELECT count(1) from outercalluser where outercalluser.taskid = a.id and isCall =1) as totalCallNum,
+        (SELECT count(1) from outercalluser where outercalluser.taskid = a.id and isCall =1 and bdsc &gt;0) as
+        totalCompleteNum,
+        (SELECT count(1) from outercalluser where outercalluser.taskid = a.id and isCall =1 and bdsc=0) as
+        totalUnconnectNum
+        from outer_call_task a
+        <where>
+            <if test="pd.startTime!=null and pd.startTime!=''">
+                and a.startTime &gt; #{pd.startTime}
+            </if>
+            <if test="pd.endTime!=null and pd.endTime!=''">
+                and a.startTime &lt; #{pd.endTime}
+            </if>
+            <if test="pd.cate!=null and pd.cate!=''">
+                and a.cate=#{pd.cate}
+            </if>
+            <if test="pd.name!=null and pd.name!=''">
+                and a.name=#{pd.name}
+            </if>
+            <if test="pd.status!=null  and pd.status!=''">
+                and a.status=#{pd.status}
+            </if>
+            <if test="pd.taskid!=null and pd.taskid!=''">
+                and a.taskid=#{pd.taskid}
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteTask" parameterType="pd">
+        delete
+        from outer_call_task
+        where id = #{id}
+    </delete>
+    <update id="pauseTask" parameterType="pd">
+        update outer_call_task
+        set `status`=2
+        where find_in_set(id, #{ids})
+    </update>
+    <update id="startTask" parameterType="pd">
+        update outer_call_task
+        set `status`=1
+        where find_in_set(id, #{ids})
+    </update>
+    <select id="findcompanylist" parameterType="pd" resultType="pd">
+        select *
+        from (
+                 SELECT a.id,
+                        a.uid,
+                        a.name as companyName,
+                        a.addr as jg,
+                        a.email,
+                        a.lxr,
+                        a.lxtel,
+                        b.name AS qytypename
+                 FROM tesp_company a
+                          LEFT JOIN sys_dictionaries b ON a.qytype = b.DICTIONARIES_ID
+             ) a
+    </select>
+    <select id="findCatelist" parameterType="pd" resultType="pd">
+        SELECT *,name as lxr
+        FROM tesp_person p
+        WHERE find_in_set(p.cate, #{cate})
+    </select>
+    <insert id="insertTask" parameterType="pd" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `ylesp`.`outer_call_task`(`taskid`, `cate`, `name`, `startTime`, `endTime`, `status`, `createTime`,
+                                              `updateTime`, `createUserId`, `calledNum`, `importType`, `userCate`,
+                                              `robotSpeak`, `voicePath`, `isDeduplica`)
+        VALUES (#{taskid}, #{cate},
+                #{name}, #{startTime}, #{endTime}, 1,
+                now(), null, #{createUserId}, 0, #{importType}, #{userCate}, #{robotSpeak},
+                #{voicePath}, #{isDeduplica});
+    </insert>
+    <insert id="insertTaskCallUser" parameterType="pd">
+        INSERT INTO `ylesp`.`outercalluser`(`taskid`, `lxr`, `age`, `sex`, `cardid`, `lxtel`, `cate`,
+                                            `companyName`, `jg`, `xl`, `zy`, `uid`, `isCall`, `callSatus`, `callTime`,
+                                            `hasIntention`, `createTime`, `updateTime`, `bdsc`)
+        VALUES (#{taskid}, #{lxr}, #{age}, #{sex}, #{cardid}, #{lxtel}, #{cate}, #{companyName}, #{jg}, #{xl}, #{zy},
+                #{uid}, 0, #{callSatus}, #{callTime}, #{hasIntention}, now(), NULL, NULL);
+    </insert>
+    <select id="selectOneById" parameterType="pd" resultType="pd">
+        select *
+        from outer_call_task
+        where id = #{id}
+    </select>
+    <select id="selectOutboundData" parameterType="pd" resultType="pd">
+        select *
+        from outercalluser
+        where taskid = #{id}
+    </select>
+    <update id="editTask" parameterType="pd">
+        update outer_call_task
+        set cate=#{cate},
+            name=#{name},
+            startTime=#{startTime},
+            endTime=#{endTime},
+            robotSpeak=#{robotSpeak},
+            voicePath=#{voicePath},
+            updateTime=now()
+        where id = #{id}
+    </update>
+    <update id="replayUnCallUser" parameterType="pd">
+        update outercalluser
+        set isCall=0,
+            callSatus=null,
+            callTime=null,
+            hasIntention=null,
+            bdsc=null
+        WHERE id in (SELECT * FROM (SELECT id FROM outercalluser WHERE taskid = #{id} and isCall = 1 and bdsc = 0) a)
+    </update>
+    <select id="selectOneDetailById" parameterType="pd" resultType="pd">
+        select a.id,
+               a.taskid,
+               a.status,
+        a.userCate,
+               b.NAME                                               as cate,
+               c.NAME                                                   as name,
+               a.createTime,
+               a.startTime,
+               a.endTime,
+               (select count(1)
+                from outercalluser
+                where outercalluser.taskid = a.id)                      as totalNum,
+               (select count(1)
+                from outercalluser
+                where outercalluser.taskid = a.id
+                  and outercalluser.isCall = 0)                         as totalUnCallNum,
+               (select count(1)
+                from outercalluser
+                where outercalluser.taskid = a.id
+                  and outercalluser.isCall = 1)                         as totalCalledNum,
+               (select count(1)
+                from outercalluser
+                where outercalluser.taskid = a.id
+                  and outercalluser.isCall = 1
+                  and bdsc = 0)                                         as totalUnConnectNum,
+               (select count(1)
+                from outercalluser
+                where outercalluser.taskid = a.id
+                  and outercalluser.isCall = 1
+                  and hasIntention = 1)                                 as totalhasIntentionNum,
+               (select count(1)
+                from outercalluser
+                where outercalluser.taskid = a.id
+                  and outercalluser.isCall = 1
+                  and hasIntention = 2)                                 as totalNothasIntentionNum,
+               (select count(1)
+                from outercalluser
+                where outercalluser.taskid = a.id
+                  and outercalluser.isCall = 1
+                  and hasIntention = 0)                                 as totalUnKnownhasIntentionNum,
+               (SELECT zxxm from tzxlb where tzxlb.id = a.createUserId) as createUseName
+        from outer_call_task a
+        left join sys_dictionaries b on a.cate = b.DICTIONARIES_ID
+                 left join sys_dictionaries c on a.name = c.DICTIONARIES_ID
+        where a.id = #{id}
+    </select>
+    <select id="taskDetaillistPage" resultType="pd" parameterType="page">
+        select a.id,a.lxr, c.taskid, a.age, a.sex, a.cardid, a.lxtel, b.NAME as cate, companyName, a.jg, a.xl, a.zy,
+        a.uid, a.isCall,
+        a.callSatus,
+        a.callTime, a.hasIntention, a.createTime, a.updateTime, a.bdsc from outercalluser a left join sys_dictionaries b
+        on
+        a.cate=b.DICTIONARIES_ID join outer_call_task c on a.taskid=c.id
+        <where>a.taskid=#{pd.id}
+            <if test="pd.lxr!=null and pd.lxr!=''">
+                and a.lxr like concat('%',#{pd.lxr},'%')
+            </if>
+            <if test="pd.lxtel!=null  and pd.lxtel!=''">
+                and a.lxtel like concat('%',#{pd.lxtel},'%')
+            </if>
+            <if test="pd.callSatus!=null and pd.callSatus!=''">
+                and a.callSatus =#{pd.callSatus}
+            </if>
+            <if test="pd.hasIntention!=null and pd.hasIntention!=''">
+                and a.hasIntention =#{pd.hasIntention}
+            </if>
+            <if test="pd.companyName!=null and pd.companyName!=''">
+                and a.companyName like concat('%',#{pd.companyName},'%')
+            </if>
+        </where>
+    </select>
+    <select id="taskDetailAll" resultType="pd" parameterType="pd">
+        select a.id,a.lxr, c.taskid, a.age, a.sex, a.cardid, a.lxtel, b.NAME as cate, a.companyName, a.jg, a.xl, a.zy,
+        a.uid, a.isCall,
+        a.callSatus,
+        (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = c.cate) as cateName,
+        (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = c.name) as taskName,
+        a.callTime, a.hasIntention, a.createTime, a.updateTime, a.bdsc,a.callNum from outercalluser a left join
+        sys_dictionaries b on
+        a.cate=b.DICTIONARIES_ID join outer_call_task c on a.taskid=c.id
+        <where>a.taskid=#{id}
+            <if test="lxr!=null and lxr!=''">
+                and a.lxr like concat('%',#{lxr},'%')
+            </if>
+            <if test="lxtel!=null  and lxtel!=''">
+                and a.lxtel like concat('%',#{lxtel},'%')
+            </if>
+            <if test="callSatus!=null and callSatus!=''">
+                and a.callSatus =#{callSatus}
+            </if>
+            <if test="hasIntention!=null and hasIntention!=''">
+                and a.hasIntention =#{hasIntention}
+            </if>
+            <if test="companyName!=null and companyName!=''">
+                and a.companyName like concat('%',#{companyName},'%')
+            </if>
+            <if test="ids!=null and ids!=''">
+                and find_in_set(a.id,#{ids})
+            </if>
+        </where>
+    </select>
+    <select id="taskIntentAnalysisData" resultType="pd" parameterType="pd">
+        select sum(if(hasIntention=0,1,0)) as totalUnKnowHasIntentionNum,sum(if(hasIntention=1,1,0)) as
+        totalHasIntentionNum,sum(if(hasIntention=2,1,0)) as totalNotHasIntentionNum from outercalluser a join
+        outer_call_task b on a.taskid=b.id
+        <where>
+            <if test="startTime!=null and startTime!=''">
+                and b.startTime &gt; #{startTime}
+            </if>
+            <if test="endTime!=null and endTime!=''">
+                and b.startTime &lt; #{endTime}
+            </if>
+            <if test="taskid!=null and taskid!=''">
+                and b.taskid =#{taskid}
+            </if>
+            <if test="name!=null and name!=''">
+                and b.name =#{name}
+            </if>
+            and isCall=1
+            and bdsc>0
+        </where>
+    </select>
+    <select id="taskNameAnalysisData" resultType="pd" parameterType="pd">
+        SELECT f.`NAME` as name,num FROM( select b.name ,count(1) as num from outercalluser a join outer_call_task b on
+        a.taskid=b.id join sys_dictionaries c on c.DICTIONARIES_ID=b.name
+        <where>
+            and isCall=1
+            and bdsc>0
+            and hasIntention=1
+            <if test="startTime!=null and startTime!=''">
+                and b.startTime &gt; #{startTime}
+            </if>
+            <if test="endTime!=null and endTime!=''">
+                and b.startTime &lt; #{endTime}
+            </if>
+            <if test="taskid!=null and taskid!=''">
+                and b.taskid =#{taskid}
+            </if>
+            <if test="name!=null and name!=''">
+                and b.name =#{name}
+            </if>
+        </where>
+        GROUP BY b.name) d right JOIN sys_dictionaries f on f.DICTIONARIES_ID =d.`name` JOIN sys_dictionaries g on
+        g.DICTIONARIES_ID=f.PARENT_ID WHERE g.BIANMA='039'
+        <if test="name!=null and name!=''">
+            and f.DICTIONARIES_ID =#{name}
+        </if>
+    </select>
+
+    <select id="intentUserlistPage" parameterType="page" resultType="pd">
+        select a.id,a.lxr, c.taskid, a.age, a.sex, a.cardid, a.lxtel, b.NAME as cate, a.companyName, a.jg, a.xl, a.zy,
+        a.uid, a.isCall,
+        a.callSatus,
+        (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = c.cate) as cateName,
+        (SELECT sys_dictionaries.NAME from sys_dictionaries where DICTIONARIES_ID = c.name) as taskName,
+        a.callTime, a.hasIntention, a.createTime, a.updateTime, a.bdsc,a.callNum from outercalluser a left join
+        sys_dictionaries b on
+        a.cate=b.DICTIONARIES_ID join outer_call_task c on a.taskid=c.id
+        <where>a.hasIntention in(1,0)
+            <if test="pd.startTime!=null and pd.startTime!=''">
+                and c.startTime &gt; #{pd.startTime}
+            </if>
+            <if test="pd.endTime!=null and pd.endTime!=''">
+                and c.startTime &lt; #{pd.endTime}
+            </if>
+            <if test="pd.taskCate!=null and pd.taskCate!=''">
+                and c.cate =#{pd.taskCate}
+            </if>
+            <if test="pd.name!=null  and pd.name!=''">
+                and c.name= #{pd.name}
+            </if>
+            <if test="pd.reCall!=null  and pd.reCall!=''">
+                and a.reCall =#{pd.reCall}
+            </if>
+            <if test="pd.userCate!=null  and pd.userCate!=''">
+                and a.cate =#{pd.userCate}
+            </if>
+            <if test="pd.companyName!=null and pd.companyName!=''">
+                and a.companyName like concat('%',#{pd.companyName},'%')
+            </if>
+            <if test="pd.lxr!=null and pd.lxr!=''">
+                and a.lxr like concat('%',#{pd.lxr},'%')
+            </if>
+            <if test="pd.lxtel!=null and pd.lxtel!=''">
+                and a.lxtel like concat('%',#{pd.lxtel},'%')
+            </if>
+
+        </where>
+    </select>
+
+    <select id="findcateByid" parameterType="java.lang.String" resultType="java.lang.String">
+        select NAME
+        from sys_dictionaries
+        where DICTIONARIES_ID = #{id}
+    </select>
+</mapper>

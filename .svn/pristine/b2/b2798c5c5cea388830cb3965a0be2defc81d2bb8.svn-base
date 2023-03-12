@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="companyCountMapper">
+    <select id="companyCount" parameterType="pd" resultType="pd">
+        SELECT COUNT(uid) AS companyCount FROM tesp_company WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+        and czdate &lt; #{endTime}
+        </if>
+    </select>
+    <select id="recruitPeopleCount" parameterType="pd" resultType="pd">
+        SELECT COUNT(1) AS recruitPeopleCount  FROM (
+        SELECT tj.id FROM tesp_tj tj LEFT JOIN tesp_company c ON c.uid = tj.uid  WHERE NOT c.id  IS NULL and tj.istj = 1
+        <if test="startTime!=null and startTime!=''">
+            and tj.czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+        and tj.czdate &lt; #{endTime}
+        </if>
+            ) AS result
+
+    </select>
+    <select id="jobCount" resultType="pd" parameterType="page">
+        SELECT j.gwflname AS `name`, COUNT(result.id) AS `value`
+        FROM tesp_jobtype j
+        LEFT JOIN
+        (SELECT jt2.`gwflname`, jt2.code, emp.id
+        FROM tesp_jobtype jt
+        LEFT JOIN tesp_jobtype jt2 ON jt.parent_code = jt2.code
+        LEFT JOIN tesp_employreg emp ON emp.jobname = jt.code
+        WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and emp.czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and emp.czdate &lt; #{pd.endTime}
+        </if>
+        ) result ON j.code = result.code
+        WHERE j.parent_code = 0
+        GROUP BY j.gwflname
+        ORDER BY `value` DESC
+        LIMIT 0,10
+    </select>
+    <select id="recruitProportion" resultType="pd" parameterType="page">
+        SELECT
+        COUNT(b.xl) AS 'value',
+        a.NAME AS 'name'
+        FROM
+        sys_dictionaries a
+        LEFT JOIN
+        (SELECT
+        j.xl
+        FROM
+        tesp_employreg j
+        LEFT JOIN tesp_person p
+        ON p.uid = j.uid
+        WHERE 1 = 1
+        <if test="pd.startTime!=null and pd.startTime!=''">
+            and j.czdate &gt; #{pd.startTime}
+        </if>
+        <if test="pd.endTime!=null and pd.endTime!=''">
+            and j.czdate &lt; #{pd.endTime}
+        </if>) b
+        ON a.dictionaries_id = b.xl
+        WHERE PARENT_ID = '1068641a9ee64ea48d090cd99023f603'
+        GROUP BY a.DICTIONARIES_ID
+    </select>
+
+    <select id="employregCount"  resultType="pd" parameterType="list">
+            <foreach collection="list"  item="item" index="index" separator="union all">
+                SELECT DATE_FORMAT(#{item.endTime},"%Y-%m-%d") AS `name`,COUNT(id) AS `value` FROM tesp_employreg WHERE
+                isvalid = 1 and czdate &lt;= #{item.endTime}
+            </foreach>
+    </select>
+</mapper>
+
+
+

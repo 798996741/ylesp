@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="fileMapper">
+	
+	<!--表名 -->
+	<sql id="tableName">
+		t_file
+	</sql>
+	
+	
+	<!-- 新增-->
+	<insert id="saveFile" parameterType="pd">
+		insert into 
+		t_file
+		(
+		uid,file,name,ext,createman,createdate,filename,uuid,type
+		) values (
+		#{uid},#{file},#{name},#{ext},#{createman},now(),#{filename},#{uuid},#{type}
+		)
+	</insert>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteFile" parameterType="String">
+		delete from
+			t_file
+		where 
+			uuid =#{uuid}
+	</delete>
+	
+	<!-- 批量删除 -->
+	<delete id="deleteAllFile" parameterType="String">
+		delete from t_file
+		where 
+			find_in_set(uuid,#{id})
+	</delete>
+	
+	<!-- 通过id获取数据 -->
+	<select id="findFileByuid" parameterType="pd" resultType="pd">
+		select 
+			a.*
+		 from 
+		 t_file a
+		where 1=1
+			<if test="uid!= null and uid != ''"> 
+			 and uid = #{uid}
+			</if>
+			<if test="type!= null and type != ''">
+				and type=#{type}
+			</if>
+	</select>
+	
+	
+	<!-- 通过id获取数据 -->
+	<select id="findFileById" parameterType="pd" resultType="pd">
+		select 
+			*
+		 from 
+		 t_file
+		where 
+			uuid = #{uuid}
+			<if test="type!= null and type != ''">
+				and find_in_set(a.type,#{type})
+			</if>
+	</select>
+	
+	
+
+	
+	
+</mapper>

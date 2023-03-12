@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TespTrainrecoMapper">
+
+    <select id="findTrainrecolistPage" parameterType="Page" resultType="pd">
+        SELECT
+        a.*,
+        b.sex,
+        b.name,
+        b.addr,
+        b.email,
+        b.tel,
+        b.lxtel,
+        b.age,
+        b.jg,
+        b.isjob,
+        b.xl,
+        b.zy,
+        b.cardid,
+        b.isimpot,
+        c.name AS credenname,
+        d.name AS levelname,
+        e.name AS jobvarname,
+        g.name AS catename
+        FROM
+        tesp_trainreco a
+        LEFT JOIN tesp_person b
+        ON a.uid=b.uid
+        LEFT JOIN sys_dictionaries c ON a.creden=c.DICTIONARIES_ID
+        LEFT JOIN sys_dictionaries d ON a.level=d.DICTIONARIES_ID
+        LEFT JOIN sys_dictionaries e ON a.jobvar=e.DICTIONARIES_ID
+        LEFT JOIN sys_dictionaries g ON a.cate=g.DICTIONARIES_ID
+
+        where 1=1
+        <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+            and a.cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+        </if>
+        <if test="pd.issue!=null and pd.issue!=''" >
+            and issue=#{pd.issue}
+        </if>
+        <if test="pd.keywords != null and pd.keywords != ''">
+            AND (
+           b.name	 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+           b.tel	 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+           a.trainname LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            c.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            d.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            e.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            g.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+           a.remark LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+        order by id desc
+    </select>
+
+   <select id="finddetiallistPage" parameterType="Page" resultType="pd">
+        select
+         a.*,
+        c.name AS credenname,
+       d.name AS levelname,
+       e.name AS jobvarname
+         from tesp_trainreco a
+       LEFT JOIN sys_dictionaries c ON a.creden=c.DICTIONARIES_ID
+       LEFT JOIN sys_dictionaries d ON a.level=d.DICTIONARIES_ID
+       LEFT JOIN sys_dictionaries e ON a.jobvar=e.DICTIONARIES_ID
+       LEFT JOIN sys_dictionaries g ON a.cate=g.DICTIONARIES_ID
+       where 1=1
+       <if test="pd.uid!=null and pd.uid!=''" >
+           and a.uid=#{pd.uid}
+       </if>
+   </select>
+
+
+
+    <!--新增所有列-->
+    <insert id="insertTrainreco" parameterType="pd">
+        insert into ylesp.tesp_trainreco(uid, creden, jobvar, level, issue, trainname, remark, cate,cztime)
+        values (#{uid}, #{creden}, #{jobvar}, #{level}, #{issue}, #{trainname}, #{remark}, #{cate}, #{cztime})
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="updateTrainreco" parameterType="pd">
+        update ylesp.tesp_trainreco
+        set
+
+                uid = #{uid},
+                creden = #{creden},
+                jobvar = #{jobvar},
+                level = #{level},
+                issue = #{issue},
+                trainname = #{trainname},
+                remark = #{remark},
+                cate = #{cate},
+                cztime = #{cztime}
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteTrainrecoById" parameterType="pd">
+        delete from ylesp.tesp_trainreco where id = #{id}
+    </delete>
+
+    <select id="JobReturnlistPage" parameterType="Page" resultType="pd">
+        SELECT * FROM (
+        SELECT DISTINCT
+        a.*,
+        b.id,
+        b.zxid,
+        b.result,
+        c.zxxm,
+        '2' AS TYPE,
+        '个人' AS typename,
+        d.name as catename
+        FROM
+        (SELECT
+        a.uid,
+        a.name,
+        a.tel,
+        a.cate
+        FROM
+        tesp_person a,
+        tesp_jobreg b
+        WHERE 1 = 1
+        AND a.uid = b.uid and b.isvalid=1) a left join
+        (SELECT
+        *
+        FROM
+        tesp_revrecord
+        WHERE id IN
+        (SELECT
+        MAX(id)
+        FROM
+        tesp_revrecord
+        GROUP BY uid)) b
+        on a.uid = b.uid
+        left join tzxlb c on b.zxid=c.zxid
+        left join sys_dictionaries d on a.cate=d.DICTIONARIES_ID
+        UNION all
+        SELECT DISTINCT
+        a.*,
+        b.id,
+        b.zxid,
+        b.result,
+        c.zxxm,
+        '1' AS TYPE,
+        '公司' AS typename,
+        d.name as catename
+        FROM
+        (SELECT
+        a.uid,
+        a.name,
+        a.tel,
+        a.cate
+        FROM
+        tesp_company a,
+        tesp_employreg b
+        WHERE 1 = 1
+        AND a.uid = b.uid and b.isvalid=1) a left join
+        (SELECT
+        *
+        FROM
+        tesp_revrecord
+        WHERE id IN
+        (SELECT
+        MAX(id)
+        FROM
+        tesp_revrecord
+        GROUP BY uid)) b
+        on a.uid = b.uid
+        left join tzxlb c on b.zxid=c.zxid
+        left join sys_dictionaries d on a.cate=d.DICTIONARIES_ID
+        ) a
+        where 1=1
+        <if test="pd.name!=null and pd.name !=''">
+            and name = #{pd.name}
+        </if>
+        <if test="pd.type!=null and pd.type !=''">
+            and type = #{pd.type}
+        </if>
+        <if test="pd.result!=null and pd.result !=''">
+            and result = #{pd.result}
+        </if>
+    </select>
+
+    <select id="jobcaselist" resultType="pd" parameterType="pd">
+        select a.*,b.gwflname,c.name as jobtypename from tesp_jobreturn a
+        left join tesp_jobtype b on a.jobname=b.code
+        left join sys_dictionaries c on a.jobtype=c.DICTIONARIES_ID
+         where 1=1
+        <if test="uid!=null and uid!=''">
+            and uid=#{uid}
+        </if>
+    </select>
+
+    <insert id="insertjobreturn" parameterType="pd">
+        insert into ylesp.tesp_jobreturn(uid, jobtime, jobunit, jobname, `case`, czman, cztime,jobtype)
+        values (#{uid}, #{jobtime}, #{jobunit}, #{jobname}, #{case}, #{czman}, now(), #{jobtype})
+    </insert>
+
+    <update id="updatejobreturn" parameterType="pd">
+        UPDATE tesp_jobreturn
+		SET
+		uid = #{uid},
+         jobtime = #{jobtime},
+         jobunit = #{jobunit},
+         jobtype = #{jobtype},
+         jobname = #{jobname},
+         `case` = #{case},
+         czman = #{czman},
+         cztime = now()
+		where id=#{id}
+    </update>
+
+    <select id="SignupCompany" parameterType="Page" resultType="pd">
+        select a.uid,a.name,a.tel, b.zxid,b.id, b.result,d.zxxm
+        from (select distinct a.*
+              from tesp_company a,
+                   tesp_signup b
+              where a.uid = b.cuid) a
+                 left join (SELECT *
+                            FROM tesp_revrecord
+                            WHERE id IN
+                                  (SELECT MAX(id)
+                                   FROM tesp_revrecord
+                                   GROUP BY uid)) b
+                           on a.uid = b.uid
+                 left join tzxlb d on b.zxid=d.zxid
+                 where 1=1
+        <if test="pd.result!=null and pd.result !=''">
+            and b.result = #{pd.result}
+        </if>
+        <if test="pd.keywords != null and pd.keywords != ''">
+            AND (
+            a.name	 LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            a.tel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            a.lxtel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            d.zxxm LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') or
+            b.result LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+            )
+        </if>
+        order by id desc
+    </select>
+
+    <select id="getsignnum" resultType="pd" parameterType="pd">
+        select count(id) count from tesp_revrecord where uid=#{uid}
+    </select>
+
+    <select id="findjzbtry" parameterType="pd" resultType="pd">
+        select id, cztime, name, cardid, creden, jobvar, level, tel, address as addr, remark, uid, cate from tesp_jzbtry where uid=#{uid}
+    </select>
+    <select id="findpoverty" parameterType="pd" resultType="pd">
+        select id, cztime, name, tel, remark, uid, cate from tesp_poverty where uid=#{uid}
+    </select>
+    <select id="findsbbtry" parameterType="pd" resultType="pd">
+        select id, cztime, name, tel, remark, uid, cate from tesp_sbbtry where uid=#{uid}
+    </select>
+    <select id="findgraduate" parameterType="pd" resultType="pd">
+        select id, name, sex, cardid, school, gradate as xl, edubg, address as addr, tel, extel, jobadd, jobtype, jobunit, remark, arrtime, major as zy, czman, czdate, uid, cate from tesp_graduate where uid=#{uid}
+    </select>
+    <select id="findotherperson" parameterType="pd" resultType="pd">
+        select  id, uid, name, czdate, sex, cardid, isjob, tel, cate from tesp_otherperson where uid=#{uid}
+    </select>
+    <select id="findperson" parameterType="pd" resultType="pd">
+        select id, uid, sex, name, addr, email, tel, lxtel, age, jg, czman, czdate, isjob, xl, zy, cardid, isimpot from tesp_person where uid=#{uid}
+    </select>
+    <select id="findcompany" parameterType="pd" resultType="pd">
+        select id, uid, qytype, name, addr, email, lxr, tel, lxtel, bylxr, bylxtel, czman, czdate, isimpot from tesp_company where uid=#{uid}
+    </select>
+
+    <select id="misscalllistPage" resultType="pd" parameterType="page">
+        SELECT
+          a.uid,
+        DATE_FORMAT (a.czsj, '%Y-%m-%d %H:%i:%s') czsj,
+          a.dhhm,
+          b.id,
+          b.zxid,
+          b.result,
+          c.zxxm
+        FROM
+          (SELECT
+            id AS uid,
+            czsj,
+            dhhm
+          FROM
+            tIvropt
+          WHERE czxm = '转人工'
+            AND czjg = '失败') a left join
+          (SELECT
+            *
+          FROM
+            tesp_revrecord
+          WHERE id IN
+            (SELECT
+              MAX(id)
+            FROM
+              tesp_revrecord
+            GROUP BY uid)) b
+        on a.uid = b.uid
+         left join tzxlb c on b.zxid=c.zxid
+         where 1=1
+        <if test="pd.dhhm!=null and pd.dhhm !=''">
+            and a.dhhm = #{pd.dhhm}
+        </if>
+        <if test="pd.result!=null and pd.result !=''">
+            and b.result = #{pd.result}
+        </if>
+        <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+            and a.czsj BETWEEN #{pd.starttime} and #{pd.endtime}
+        </if>
+    </select>
+
+    <select id="leavemsglistPage" parameterType="page" resultType="pd">
+        SELECT
+        a.*,
+        b.zxid,
+        b.result,
+        b.uid,
+        b.id
+        FROM
+        (SELECT
+        a.zjhm,
+        DATE_FORMAT (a.lysj, '%Y-%m-%d %H:%i:%s') lysj,
+        a.ucid,
+        CONCAT(CONCAT(b.param_value, DATE_FORMAT(a.lysj,'%Y-%m-%d'),'/'),a.lywj) AS lywj
+        FROM
+        tRecord a,
+        sys_param b
+        WHERE a.lylx = '客户录音'
+        AND b.param_code = 'recordsvr'
+        ORDER BY lysj DESC) a
+        left join  tesp_revrecord b on a.ucid=b.ucid
+        where 1=1
+        <if test="pd.zjhm!=null and pd.zjhm !=''">
+            and a.zjhm = #{pd.zjhm}
+        </if>
+        <if test="pd.result!=null and pd.result !=''">
+            and b.result = #{pd.result}
+        </if>
+        <if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+            and a.lysj BETWEEN #{pd.starttime} and #{pd.endtime}
+        </if>
+    </select>
+
+    <select id="exportsign" parameterType="pd" resultType="pd">
+        SELECT
+          a.jobname,
+          a.signupjob,
+          a.czdate,
+          b.name as cname,
+          b.lxtel as clxtel,
+          b.lxr as clxr,
+          b.bylxtel as cbylxtel,
+          c.name as pname,
+          c.sex,
+          c.lxtel as plxtel,
+          c.xl,
+          d.gwflname as jobnamename,
+            e.NAME as xlname
+        FROM
+          tesp_signup a
+          LEFT JOIN tesp_company b
+            ON a.cuid = b.uid
+          LEFT JOIN tesp_person c
+            ON a.puid = c.uid
+            left join tesp_jobtype d
+            on a.jobname=d.code
+            left join sys_dictionaries e
+            on c.xl=e.DICTIONARIES_ID
+
+    </select>
+
+    <insert id="insertsignup" parameterType="pd" >
+    insert into tesp_signup(uid, puid, cuid, isjob, jobname, jobaddr,czdate,signupjob)
+        values (#{uid}, #{puid}, #{cuid}, #{isjob}, #{jobname},#{jobaddr}, now(), #{signupjob})
+    </insert>
+
+    <select id="SignupPerson" parameterType="Page" resultType="pd">
+        select
+        b.name,
+        b.sex,
+        b.lxtel,
+        b.xl,
+        a.uid,
+        a.signupjob,
+        a.jobaddr,
+        a.jobname,
+        a.isjob,
+        ifnull(c.gwflname,'暂无') jobnamename,
+        DATE_FORMAT (a.czdate, '%Y-%m-%d %H:%i:%s') czdate,
+        d.name as xlname
+        from tesp_signup a
+        left join tesp_person b on a.puid=b.uid
+        left join tesp_jobtype c on a.jobname=c.code
+        left join sys_dictionaries d on d.DICTIONARIES_ID=b.xl
+        where 1=1
+        <if test="pd.uid!=null and pd.uid !=''">
+            and a.cuid=#{pd.uid}
+        </if>
+
+    </select>
+
+    <update id="updateisjobAll" parameterType="pd">
+         UPDATE tesp_signup
+		SET
+		isjob = #{isjob}
+		where uid=#{uid}
+    </update>
+</mapper>

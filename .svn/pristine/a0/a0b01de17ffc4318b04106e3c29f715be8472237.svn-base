@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="serviceCountMapper">
+    <select id="serviceCount" parameterType="pd" resultType="pd">
+            SELECT  SUM(result.value) AS serviceCount FROM(
+            SELECT COUNT(1) AS `value` FROM tesp_qtfw WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        UNION all
+        SELECT COUNT(1) AS `value`  FROM tesp_zczx WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        UNION all
+        SELECT COUNT(1) AS `value`  FROM tesp_ywyd WHERE  1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        ) AS result
+    </select>
+
+    <select id="policyRank" parameterType="pd" resultType="pd">
+        SELECT `name`,COUNT(zczx.zczxname) `value` FROM `sys_dictionaries` dic LEFT JOIN tesp_zczx zczx ON zczx.zczxname
+        = dic.dictionaries_id WHERE
+        dic.bianma LIKE "%035-00%"
+        <if test="startTime!=null and startTime!=''">
+            and zczx.czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and zczx.czdate &lt; #{endTime}
+        </if>
+        GROUP BY `DICTIONARIES_ID` ORDER BY `value` DESC LIMIT 0,10
+    </select>
+
+    <select id="policyProportion" parameterType="pd" resultType="pd">
+        SELECT `name`,COUNT(zczx.zczxtype) `value` FROM `sys_dictionaries` dic LEFT JOIN tesp_zczx zczx ON zczx.zczxtype
+        = dic.dictionaries_id WHERE
+        dic.PARENT_ID = "558dd06301ec4d1e872970f67401fec5"
+        <if test="startTime!=null and startTime!=''">
+            and zczx.czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and zczx.czdate &lt; #{endTime}
+        </if>
+        GROUP BY `DICTIONARIES_ID` ORDER BY `value` DESC LIMIT 0,10
+    </select>
+
+    <select id="employProportion" parameterType="pd" resultType="pd">
+        SELECT SUM(`value`) AS `value`,"就业服务" AS `name` FROM(
+        SELECT COUNT(uid) AS `value` FROM tesp_jobreg WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        UNION all
+        SELECT COUNT(uid) AS `value` FROM tesp_tj WHERE istj = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        ) a
+        UNION all
+        SELECT SUM(`value`) AS `value`,"招聘服务" AS `name` FROM(
+        SELECT COUNT(uid) AS `value` FROM tesp_employreg WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        UNION all
+        SELECT COUNT(uid)AS `value` FROM tesp_tj WHERE istj = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+        ) b
+        UNION all
+        SELECT COUNT(uid) AS `value`,"回访服务" AS `name` FROM tesp_revrecord WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and cztime &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and cztime &lt; #{endTime}
+        </if>
+        UNION all
+        SELECT COUNT(uid) AS `value`,"技能培训" AS `name` FROM tesp_trainreco WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and cztime &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and cztime &lt; #{endTime}
+        </if>
+        UNION all
+        SELECT COUNT(uid) AS `value`,"其他服务" AS `name` FROM tesp_qtfw WHERE 1 = 1
+        <if test="startTime!=null and startTime!=''">
+            and czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and czdate &lt; #{endTime}
+        </if>
+    </select>
+
+    <select id="ywydCount"  parameterType="pd" resultType="pd">
+        SELECT `name`,COUNT(ywyd.uid) AS `value` FROM sys_dictionaries dic LEFT JOIN tesp_ywyd ywyd ON ywyd.ydqd = dic.dictionaries_id
+        WHERE parent_id = "721d813acc59485ca51cf75e79866b67"
+        <if test="startTime!=null and startTime!=''">
+            and ywyd.czdate &gt; #{startTime}
+        </if>
+        <if test="endTime!=null and endTime!=''">
+            and ywyd.czdate &lt; #{endTime}
+        </if>
+        GROUP BY dic.dictionaries_id
+    </select>
+
+</mapper>
+
+
+

@@ -1,0 +1,14 @@
+package com.yulun.service;
+
+import com.fh.entity.Page;
+import com.fh.util.PageData;
+
+import java.util.List;
+
+public interface RevrecordManager {
+    public List<PageData> findrevrecordlistPage(Page page)throws Exception;
+    public void insertRevrecord(PageData pd) throws Exception;
+    public void updateRevrecord(PageData pd) throws Exception;
+    public List<PageData> tesprecordlistPage(Page page)throws Exception;
+    public List<PageData> downloadRecord(PageData pd)throws Exception;
+}

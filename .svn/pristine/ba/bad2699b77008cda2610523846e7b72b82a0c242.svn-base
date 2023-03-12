@@ -1,0 +1,307 @@
+package com.yulun.controller.file;
+
+import com.alibaba.fastjson.JSONObject;
+import com.fh.controller.base.BaseController;
+import com.fh.util.Const;
+import com.fh.util.FileUpload;
+import com.fh.util.PageData;
+import com.fh.util.PathUtil;
+import com.xxgl.service.mng.ZxlbManager;
+import com.yulun.excel.ImportExcelService;
+import com.yulun.service.OuterCallTaskManager;
+import com.yulun.utils.PoiExcelUtil;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+/**
+ * @description:
+ * @author: 19bicheng@gmail.com
+ * @time: 2020/7/24 13:58
+ */
+@Controller
+@RequestMapping("api")
+public class FileVoiceUpload extends BaseController {
+    @Autowired
+    OuterCallTaskManager outerCallTaskManager;
+    @Resource(name = "zxlbService")
+    private ZxlbManager zxlbService;
+
+    /**
+     * 上传录音文件
+     *
+     * @param file
+     * @param request
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping(value = "/upload/call/voice", produces = "application/json;charset=UTF-8")
+    @ResponseBody()
+    public String readcompanyExcel(@RequestParam(value = "file", required = true) MultipartFile file, HttpServletRequest request, HttpServletResponse response) throws Exception {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        JSONObject obj = new JSONObject();
+        String orifileName = file.getOriginalFilename();
+        String suffix = orifileName.substring(orifileName.lastIndexOf("."));
+        String imgExt = ".wav";
+        if (imgExt.indexOf(suffix) < 0) {
+            obj.put("succsess", false);
+            obj.put("message", "录音文件格式不正确，只支持wav格式录音文件");
+            return obj.toJSONString();
+        }
+        try {
+            String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+            String fileName = com.fh.util.FileUpload.fileUp(file, filePath, UUID.randomUUID().toString().replaceAll("-", "").toLowerCase());                            //执行上传
+            obj.put("succsess", true);
+            obj.put("path", fileName);
+        } catch (Exception e) {
+            obj.put("succsess", false);
+            obj.put("message", "上传失败");
+        }
+        return obj.toJSONString();
+    }
+
+    @RequestMapping("download/taskDetailPage/excel")
+    public void downLoadDepartmentDistributedDistributed(HttpServletResponse response, Integer id, String lxr, String lxtel, Integer callSatus, Integer hasIntention, String companyName, String ids) {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        PageData pd = new PageData();
+        pd.put("ids", ids);
+        pd.put("id", id);
+        pd.put("lxr", lxr);
+        pd.put("lxtel", lxtel);
+        pd.put("callSatus", callSatus);
+        pd.put("hasIntention", hasIntention);
+        pd.put("companyName", companyName);
+        List<List<String>> headList = new ArrayList<>();
+
+        List<String> head0 = new ArrayList<String>();
+        head0.add("任务id");
+        List<String> head1 = new ArrayList<String>();
+        head1.add("任务类型");
+        List<String> head2 = new ArrayList<String>();
+        head2.add("任务名称");
+        List<String> head3 = new ArrayList<String>();
+        head3.add("所属地区");
+        List<String> head4 = new ArrayList<String>();
+        head4.add("姓名");
+        List<String> head5 = new ArrayList<String>();
+        head5.add("年龄");
+        List<String> head6 = new ArrayList<String>();
+        head6.add("性别");
+        List<String> head7 = new ArrayList<String>();
+        head7.add("联系电话");
+        List<String> head8 = new ArrayList<String>();
+        head8.add("客户类型");
+        List<String> head9 = new ArrayList<String>();
+        head9.add("身份证号");
+        List<String> head10 = new ArrayList<String>();
+        head10.add("企业名称");
+        List<String> head11 = new ArrayList<String>();
+        head11.add("通话时间");
+        List<String> head12 = new ArrayList<String>();
+        head12.add("通话时长");
+        List<String> head13 = new ArrayList<String>();
+        head13.add("通话次数");
+        List<String> head14 = new ArrayList<String>();
+        head14.add("任务结果");
+        headList.add(head0);
+        headList.add(head1);
+        headList.add(head2);
+        headList.add(head3);
+        headList.add(head4);
+        headList.add(head5);
+        headList.add(head6);
+        headList.add(head7);
+        headList.add(head8);
+        headList.add(head9);
+        headList.add(head10);
+        headList.add(head11);
+        headList.add(head12);
+        headList.add(head13);
+        headList.add(head14);
+        try {
+            List<PageData> list = outerCallTaskManager.taskDetailAll(pd);
+            List<List<String>> dataList = new ArrayList<>();
+            for (PageData pageData : list) {
+                List<String> data = new ArrayList<String>();
+                data.add(pageData.getString("taskid"));
+                data.add(pageData.getString("cateName"));
+                data.add(pageData.getString("taskName"));
+                data.add(pageData.getString("jg"));
+                data.add(pageData.getString("lxr"));
+                data.add(pageData.get("age") == null ? "-" : (int) pageData.get("age") + "");
+                data.add(pageData.get("sex") == null ? "-" : (pageData.get("sex").toString().equals("1") ? "男" : "女"));
+                data.add(pageData.getString("lxtel"));
+                data.add(pageData.getString("cate"));
+                data.add(pageData.getString("cardid"));
+                data.add(pageData.getString("companyName"));
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                data.add(pageData.get("callTime") == null ? "-" : formatter.format((Date) pageData.get("callTime")));
+                data.add(pageData.get("bdsc") == null ? "-" : pageData.get("bdsc").toString());
+                data.add(pageData.get("callNum") == null ? "-" : pageData.get("callNum").toString());
+                String hasIntentionExcel = "";
+                Object hasIntention1 = pageData.get("hasIntention");
+                if (hasIntention1 == null) {
+                    hasIntentionExcel = "-";
+                } else {
+                    if ("0".equals(hasIntention1.toString())) {
+                        hasIntentionExcel = "未知意向";
+                    } else if ("1".equals(hasIntention1.toString())) {
+                        hasIntentionExcel = "有意向";
+                    } else if ("2".equals(hasIntention1.toString())) {
+                        hasIntentionExcel = "没有意向";
+                    }
+                }
+                data.add(hasIntentionExcel);
+                dataList.add(data);
+            }
+            PoiExcelUtil.dynamicHeadWebWrite(response, "通话详情", headList, dataList);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    @RequestMapping(value = "/outbounddata/import", produces = {"application/json;charset=UTF-8"})
+    @ResponseBody()
+    public String readgraduateExcel2(@RequestParam(value = "files", required = false) MultipartFile file, HttpServletRequest request, HttpServletResponse response, int isDeduplica) throws Exception {
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        PageData pd = new PageData();
+        PageData pd_area = new PageData();
+        JSONObject json = new JSONObject();
+//        try {
+        System.out.println(request.getParameter("tokenid"));
+        com.alibaba.fastjson.JSONObject object_verificate = new com.alibaba.fastjson.JSONObject();
+        List<PageData> saveList = new ArrayList<PageData>();
+
+        if (null != file && !file.isEmpty()) {
+            Date d = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+            String pcbh = sdf.format(d);  //导入批次
+
+            String filePath = PathUtil.getClasspath() + Const.FILEPATHFILE;                                //文件上传路径
+            String fileName = FileUpload.fileUp(file, filePath, "graduateListexcel");                            //执行上传
+            ImportExcelService importExcelService = new ImportExcelService();
+            String[] importColumns = {"所属地区", "姓名", "年龄", "性别", "联系电话", "人员类型", "身份证号", "企业名称"};//设置字段名称
+            String[] importFields = {"jg", "lxr", "age", "sex", "lxtel", "cate", "cardid", "companyName"};  //字段
+            // 1:IdCardVerification 2:DateVerification 3:TelVerification 4:DictVerification 5:ValueVerification 6:SqlVerification
+
+            String[] importYzColumns = {"", "", "", "", "3", "6", "1", ""};
+            int[] importFiledNums = {0, 0, 0, 0, 0, 0, 0, 0}; //0表示无限制
+            int[] importFiledNull = {0, 1, 0, 0, 1, 0, 0, 0}; //验证字段是否为空：0表示无限制，1表示不能为空
+            String[] importTjColumns = {"", "", "isNumberic", "", "", "", "", "", "", "", "", "", "", "", ""};  //isNumberic 是否数字;isEnglish 是否英文 ；isChinese 是否中文
+            String[] importValueColumns = {"", "", "", "", "", "select * from sys_dictionaries where  NAME = #{name}", "", ""};
+
+            object_verificate.put("importColumns", importColumns);
+            object_verificate.put("importFields", importFields);
+            object_verificate.put("importYzColumns", importYzColumns);
+            object_verificate.put("importFiledNums", importFiledNums);
+            object_verificate.put("importValueColumns", importValueColumns);
+            object_verificate.put("importTjColumns", importTjColumns);
+            object_verificate.put("importFiledNull", importFiledNull);
+
+            String openFilename = filePath + fileName;
+            com.alibaba.fastjson.JSONObject jsonObject = importExcelService.importExcel(openFilename, request, object_verificate);
+
+            List<PageData> listPd = ((List<PageData>) jsonObject.get("rightList"));
+            System.out.println(listPd);
+            for (int i = 0; i < listPd.size(); i++) {
+                pd = new PageData();
+                pd_area = new PageData();
+                pd.put("jg", listPd.get(i).getString("jg").trim());
+                pd.put("lxr", listPd.get(i).getString("lxr").trim());
+                pd.put("age", listPd.get(i).getString("age").trim());
+                pd.put("sex", listPd.get(i).getString("sex").trim());
+                pd.put("lxtel", listPd.get(i).getString("lxtel").trim());
+                pd.put("cate", listPd.get(i).getString("cate").trim());
+                pd.put("cardid", listPd.get(i).getString("cardid").trim());
+                pd.put("uid", get32UUID());
+                pd.put("companyName", listPd.get(i).getString("companyName").trim());
+                PageData savePd = new PageData();
+                savePd.putAll(pd);
+                saveList.add(savePd);
+            }
+            if (isDeduplica == 1) {
+                Map<String, PageData> pageDataMap = new HashMap<>();
+                for (PageData pageData : saveList) {
+                    pageDataMap.put(pageData.getString("lxtel"), pageData);
+                }
+                json.put("list", pageDataMap.values());
+            }else{
+                json.put("list", saveList);
+            }
+            List<PageData> clist = ((List<PageData>) jsonObject.get("errorList")); //导入错误的信息
+            if (clist.size() > 0) {
+//                    System.out.println(errorList);
+//                    for (int i = 0; i <errorList.size(); i++) {
+//                        pd = errorList.get(i);
+//                        pd.put("pcbh", pcbh);
+//                        pd.put("czman",pd_token.getString("ID"));
+//                        //System.out.println(errorList.get(i).getString("ycstr")+"ddd");
+//                    }
+                HSSFWorkbook wb = new HSSFWorkbook();
+                //创建sheet页
+                HSSFSheet sheet = wb.createSheet("错误数据");
+                //创建标题行
+                HSSFRow titleRow = sheet.createRow(0);
+                titleRow.createCell((short) 0).setCellValue("所属地区");
+                titleRow.createCell((short) 1).setCellValue("姓名");
+                titleRow.createCell((short) 2).setCellValue("年龄");
+                titleRow.createCell((short) 3).setCellValue("性别");
+                titleRow.createCell((short) 4).setCellValue("联系电话");
+                titleRow.createCell((short) 5).setCellValue("人员类型");
+                titleRow.createCell((short) 6).setCellValue("身份证号");
+                titleRow.createCell((short) 7).setCellValue("企业名称");
+                titleRow.createCell((short)8).setCellValue("异常日志");
+//                    {"报到时间","姓名","性别","身份证号码","毕业院校","毕业日期","学历","所学专业","入学前户口所在地","联系电话","应急联系电话","就业地意向","就业状态","就业单位","备注"}
+                for (PageData pd1 : clist) {
+                    HSSFRow dataRow = sheet.createRow(sheet.getLastRowNum() + 1);
+                    dataRow.createCell((short) 0).setCellValue(pd1.getString("jg"));
+                    dataRow.createCell((short) 1).setCellValue(pd1.getString("lxr"));
+                    dataRow.createCell((short) 2).setCellValue(pd1.getString("age"));
+                    dataRow.createCell((short) 3).setCellValue(pd1.getString("sex"));
+                    dataRow.createCell((short) 4).setCellValue(pd1.getString("lxtel"));
+                    dataRow.createCell((short) 5).setCellValue(pd1.getString("cate"));
+                    dataRow.createCell((short) 6).setCellValue(pd1.getString("cardid"));
+                    dataRow.createCell((short) 7).setCellValue(pd1.getString("companyName"));
+                    dataRow.createCell((short)8).setCellValue(pd1.getString("ycstrs"));
+                }
+
+
+                // 设置下载时客户端Excel的名称
+                String filename = new SimpleDateFormat("yyyyMMdd").format(new Date()) + "-sbbtry.xls";
+                //设置下载的文件
+                System.out.println(filename);
+                FileOutputStream fos = new FileOutputStream(new File(filePath, filename));
+                wb.write(fos);
+                fos.flush();
+                fos.close();
+                json.put("href", "uploadFiles/file/" + filename);
+            }
+            json.put("success", "true");
+
+
+        }
+//        } catch (Exception e) {
+//            json.put("success", "false");
+//        }
+        json.put("success", "true");
+
+        return json.toString();
+    }
+}

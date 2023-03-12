@@ -1,0 +1,9 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="queryMapper">
+    <select id="catelistPage" resultType="pd"  parameterType="page">
+        SELECT p.uid,p.`name`,p.`tel` FROM tesp_person p WHERE p.cate = #{pd.cate}
+    </select>
+    <select id="companylistPage" resultType="pd"  parameterType="page">
+        SELECT c.lxr AS `name`,c.tel,c.bylxr,c.bylxtel FROM tesp_company c
+    </select>
+</mapper>

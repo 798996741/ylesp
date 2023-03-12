@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ConsumerMapper">
+	<select id="findgraduatelistPage" parameterType="page" resultType="pd">
+		select a.*,b.name as jobtypename from tesp_graduate a
+		left join sys_dictionaries b on a.jobtype=b.DICTIONARIES_ID
+		where 1=1
+		<if test="pd.id!=null and pd.id!=''">
+			and a.id=#{pd.id}
+		</if>
+		<if test="pd.jobtype!=null and pd.jobtype!=''">
+			and jobtype=#{pd.jobtype}
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and arrtime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		order by id desc
+	</select>
+
+
+	<insert id="insertgraduate" parameterType="pd" >
+		INSERT INTO tesp_graduate(
+		name,
+		sex,
+		cardid,
+		school,
+		gradate,
+		edubg,
+		address,
+		tel,
+		extel,
+		jobadd,
+		jobtype,
+		jobunit,
+		remark,
+		arrtime,
+		major,
+		czman,
+		czdate
+		)VALUES (
+		#{name},
+		#{sex},
+		#{cardid},
+		#{school},
+		#{gradate},
+		#{edubg},
+		#{address},
+		#{tel},
+		#{extel},
+		#{jobadd},
+		#{jobtype},
+		#{jobunit},
+		#{remark},
+		#{arrtime},
+		#{major},
+		#{czman},
+		#{czdate}
+		)
+	</insert>
+	<update id="updategraduate" parameterType="pd">
+		UPDATE tesp_graduate
+		set
+		name=#{name},
+		sex=#{sex},
+		cardid=#{cardid},
+		school=#{school},
+		gradate=#{gradate},
+		edubg=#{edubg},
+		address=#{address},
+		major=#{major},
+		tel=#{tel},
+		extel=#{extel},
+		jobadd=#{jobadd},
+		jobtype=#{jobtype},
+		jobunit=#{jobunit},
+		remark=#{remark},
+		arrtime=#{arrtime},
+		czman=#{czman},
+		cztime=#{cztime}
+		WHERE id=#{id}
+	</update>
+	<delete id="deletegraduate" parameterType="pd">
+		DELETE FROM tesp_graduate WHERE id=#{id}
+	</delete>
+	
+	<select id="findpovertylistPage" resultType="pd" parameterType="page">
+		select * from tesp_poverty where 1=1
+		<if test="pd.id!=null and pd.id!=''">
+			and id=#{pd.id}
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		order by id desc
+	</select>
+
+
+	<insert id="insertpoverty" parameterType="pd" >
+	INSERT INTO tesp_poverty(
+		cztime,
+		name,
+		tel,
+		remark
+	)VALUES (
+		#{cztime},
+		#{name},
+		#{tel},
+		#{remark}
+	)
+	</insert>
+
+	<update id="updatepoverty" parameterType="pd">
+		UPDATE tesp_poverty
+		set
+		cztime=#{cztime},
+		name=#{name},
+		tel=#{tel},
+		remark=#{remark}
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deletepoverty" parameterType="pd">
+		DELETE FROM tesp_poverty WHERE id=#{id}
+	</delete>
+
+
+
+	<select id="findsbbtrylistPage" resultType="pd" parameterType="page">
+		select * from tesp_sbbtry where 1=1
+		<if test="pd.id!=null and pd.id!=''">
+			and id=#{pd.id}
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		order by id desc
+	</select>
+
+
+	<insert id="insertsbbtry" parameterType="pd" >
+	INSERT INTO tesp_sbbtry(
+		cztime,
+		name,
+		tel,
+		remark
+	)VALUES (
+		#{cztime},
+		#{name},
+		#{tel},
+		#{remark}
+	)
+	</insert>
+
+	<update id="updatesbbtry" parameterType="pd">
+		UPDATE tesp_sbbtry
+		set
+		cztime=#{cztime},
+		name=#{name},
+		tel=#{tel},
+		remark=#{remark}
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deletesbbtry" parameterType="pd">
+		DELETE FROM tesp_sbbtry WHERE id=#{id}
+	</delete>
+
+	<select id="findjzbtrylistPage" parameterType="page" resultType="pd">
+		SELECT a.*,
+		b.name AS levelname,
+		c.name AS credenname
+		FROM tesp_jzbtry a
+		LEFT JOIN sys_dictionaries b ON a.level=b.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries c ON a.creden=c.DICTIONARIES_ID
+		where 1=1
+		<if test="pd.id!=null and pd.id!=''">
+			and a.id=#{pd.id}
+		</if>
+		<if test="pd.level!=null and pd.level!=''">
+			and a.level=#{pd.level}
+		</if>
+		<if test="pd.creden!=null and pd.creden!=''">
+			and a.creden=#{pd.creden}
+		</if>
+		<if test="pd.starttime!=null and pd.starttime!='' and pd.endtime!=null and pd.endtime!=''">
+			and a.cztime BETWEEN #{pd.starttime} and #{pd.endtime}
+		</if>
+		order by id desc
+	</select>
+
+
+	<insert id="insertjzbtry" parameterType="pd" >
+	INSERT INTO tesp_jzbtry(
+	cztime,
+	name,
+	cardid,
+	jobvar,
+	level,
+	creden,
+	tel,
+	address,
+	remark
+	)VALUES (
+	#{cztime},
+	#{name},
+	#{cardid},
+	#{jobvar},
+	#{level},
+	#{creden},
+	#{tel},
+	#{address},
+	#{remark}
+	)
+	</insert>
+
+	<update id="updatejzbtry" parameterType="pd">
+		UPDATE tesp_jzbtry
+		set
+		cztime=#{cztime},
+		name=#{name},
+		cardid=#{cardid},
+		jobvar=#{jobvar},
+		level=#{level},
+		creden=#{creden},
+		tel=#{tel},
+		address=#{address},
+		remark=#{remark}
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deletejzbtry" parameterType="pd">
+		DELETE FROM tesp_jzbtry WHERE id=#{id}
+	</delete>
+
+<!--	 企业信息-->
+	<select id="findcompanylistPage" resultType="pd" parameterType="page">
+		SELECT
+		a.id,
+		a.uid,
+		a.qytype,
+		a.name,
+		a.addr,
+		a.email,
+		a.lxr,
+		a.tel,
+		a.lxtel,
+		a.bylxr,
+		a.bylxtel,
+		a.czman,
+		DATE_FORMAT(a.czdate,'%Y-%m-%d %H:%m:%s') czdate,
+		b.name AS qytypename
+		FROM tesp_company a
+		LEFT JOIN sys_dictionaries b ON a.qytype=b.DICTIONARIES_ID
+		where 1=1
+		<if test="pd.id!=null and pd.id!=''">
+			and a.id=#{pd.id}
+		</if>
+		<if test="pd.name!=null and pd.name!=''">
+			and a.name=#{pd.name}
+		</if>
+		<if test="pd.qytype!=null and pd.qytype!=''">
+			and a.qytype=#{pd.qytype}
+		</if>
+		<if test="pd.lxr!=null and pd.lxr!=''">
+			and a.lxr=#{pd.lxr}
+		</if>
+		<if test="pd.lxtel!=null and pd.lxtel!=''">
+			and a.lxtel=#{pd.lxtel}
+		</if>
+		<if test="pd.uid!=null and pd.uid!=''">
+			and a.uid=#{pd.uid}
+		</if>
+		<if test="pd.keywords != null and pd.keywords != ''">
+			AND (
+			a.qytype LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.name LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.addr LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.email LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.lxr LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.tel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.lxtel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.bylxr LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%') OR
+			a.bylxtel LIKE CONCAT(CONCAT('%', #{pd.keywords}),'%')
+			)
+		</if>
+		order by id desc
+	</select>
+
+	<select id="findcompany" resultType="pd" parameterType="pd">
+		SELECT a.*,
+		b.name AS qytypename
+		FROM tesp_company a
+		LEFT JOIN sys_dictionaries b ON a.qytype=b.DICTIONARIES_ID
+		where 1=1
+		<if test="uid!=null and uid!=''">
+			and uid=#{uid}
+		</if>
+		<if test="tel!=null and tel!=''">
+			and tel=#{tel}
+		</if>
+		<if test="name!=null and name!=''">
+			and name=#{name}
+		</if>
+	</select>
+
+
+	<insert id="insertcompany" parameterType="pd" >
+	INSERT INTO tesp_company(
+		uid,
+		qytype,
+		name,
+		addr,
+		email,
+		lxr,
+		tel,
+		lxtel,
+		bylxr,
+		bylxtel,
+		czman,
+		czdate
+	)VALUES (
+		#{uid},
+		#{qytype},
+		#{name},
+		#{addr},
+		#{email},
+		#{lxr},
+		#{tel},
+		#{lxtel},
+		#{bylxr},
+		#{bylxtel},
+		#{czman},
+		#{czdate}
+	)
+	</insert>
+
+	<update id="updatecompany" parameterType="pd">
+		UPDATE tesp_company
+		set
+		uid=#{uid},
+		qytype=#{qytype},
+		name=#{name},
+		addr=#{addr},
+		email=#{email},
+		lxr=#{lxr},
+		tel=#{tel},
+		lxtel=#{lxtel},
+		bylxr=#{bylxr},
+		bylxtel=#{bylxtel},
+		czman=#{czman},
+		czdate=#{czdate}
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deletecompany" parameterType="pd">
+		DELETE FROM tesp_company WHERE id=#{id}
+	</delete>
+
+	<select id="findemployreglistPage" resultType="pd" parameterType="page">
+		SELECT
+		a.id,
+		a.jobname,
+		a.jobtype,
+		a.xl,
+		a.zyyq,
+		a.remark,
+		a.czman,
+		a.uid,
+		DATE_FORMAT(a.czdate,'%Y-%m-%d %H:%m:%s') czdate,
+		a.zgrs,
+		a.sex,
+		a.agestart,
+		a.ageend,
+		a.gzdy,
+		a.gwyq,
+		a.isvalid,
+		b.gwflname,CONCAT(a.agestart,'-',a.ageend) age,
+		c.name AS jobtypename,
+		d.name AS xlname,
+		e.name AS sexname,
+		f.name AS gzdyname
+		FROM tesp_employreg a
+		LEFT JOIN tesp_jobtype b ON a.jobname=b.code
+		LEFT JOIN sys_dictionaries c ON a.jobtype=c.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries d ON a.xl=d.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries e ON a.sex=e.DICTIONARIES_ID
+		LEFT JOIN sys_dictionaries f ON a.gzdy=f.DICTIONARIES_ID
+		where 1=1
+		<if test="pd.uid!=null and pd.uid!=''">
+			and uid=#{pd.uid}
+		</if>
+	</select>
+
+	<insert id="insertemployreg" parameterType="pd" >
+	INSERT INTO tesp_employreg(
+		jobname,
+		jobtype,
+		xl,
+		zyyq,
+		remark,
+		czman,
+		uid,
+		czdate,
+		zgrs,
+		sex,
+		agestart,
+		ageend,
+		gzdy,
+		gwyq
+	)VALUES (
+		#{jobname},
+		#{jobtype},
+		#{xl},
+		#{zyyq},
+		#{remark},
+		#{czman},
+		#{uid},
+		#{czdate},
+		#{zgrs},
+		#{sex},
+		#{agestart},
+		#{ageend},
+		#{gzdy},
+		#{gwyq}
+	)
+	</insert>
+
+	<update id="updateemployreg" parameterType="pd">
+		UPDATE tesp_employreg
+		set
+		jobname=#{jobname},
+		jobtype=#{jobtype},
+		xl=#{xl},
+		zyyq=#{zyyq},
+		remark=#{remark},
+		czman=#{czman},
+		uid=#{uid},
+		czdate=#{czdate},
+		zgrs=#{zgrs},
+		sex=#{sex},
+		agestart=#{agestart},
+		ageend=#{ageend},
+		gzdy=#{gzdy},
+		gwyq=#{gwyq},
+		isvalid=#{isvalid}
+
+		WHERE id=#{id}
+	</update>
+
+	<delete id="deleteemployreg" parameterType="pd">
+		DELETE FROM tesp_employreg WHERE id=#{id}
+	</delete>
+
+	<select id="getcompanytoday" parameterType="pd" resultType="pd">
+		SELECT a.zjhm,COUNT(a.id) num,b.name
+		FROM tthjl a
+		LEFT JOIN tesp_company b ON a.zjhm=b.tel
+		WHERE 1=1 AND TO_DAYS(kssj) = TO_DAYS(NOW())
+		GROUP BY a.zjhm
+	</select>
+
+	<select id="getpersontoday" parameterType="pd" resultType="pd">
+		SELECT a.zjhm,COUNT(a.id) num,b.name
+		FROM tthjl a
+		LEFT JOIN tesp_person b ON a.zjhm=b.tel
+		WHERE 1=1 AND TO_DAYS(kssj) = TO_DAYS(NOW())
+		GROUP BY a.zjhm
+	</select>
+
+	<select id="getcalltoday" resultType="pd" parameterType="pd">
+		select zjhm,count(id) num from tthjl where 1=1 AND TO_DAYS(kssj) = TO_DAYS(NOW()) GROUP BY zjhm
+	</select>
+
+	<select id="getDIC" parameterType="pd" resultType="pd">
+		select * from sys_dictionaries where name=#{name}
+	</select>
+
+	<select id="getjobtype" parameterType="pd" resultType="pd">
+		select * from tesp_jobtype where gwflname=#{gwflname}
+	</select>
+
+</mapper>
